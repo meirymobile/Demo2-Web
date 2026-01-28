@@ -166,3 +166,14 @@ td {
     background: rgba(208, 2, 27, 0.1);
     color: var(--danger);
 }
+
+.status-saban {
+    background: rgba(255, 152, 0, 0.1);
+    color: #f57c00;
+}
+
+.count-badge {
+    font-size: 0.8em;
+    opacity: 0.8;
+    margin-left: 4px;
+}

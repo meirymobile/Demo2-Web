@@ -27,9 +27,9 @@
         <div class="search-panel">
             <input type="text" id="searchInput" placeholder="Search by Cargo ID..." onkeyup="filterTable()">
             <div class="filter-group">
-                <button class="filter-btn active" onclick="setFilter('all')">All</button>
-                <button class="filter-btn" onclick="setFilter('Approved')">Approved</button>
-                <button class="filter-btn" onclick="setFilter('Rejected')">Rejected</button>
+                <button class="filter-btn" id="btn-approved" onclick="setFilter('Approved')">Approved <span class="count-badge" id="count-approved">(0)</span></button>
+                <button class="filter-btn" id="btn-rejected" onclick="setFilter('Rejected')">Rejected <span class="count-badge" id="count-rejected">(0)</span></button>
+                <button class="filter-btn" id="btn-saban" onclick="setFilter('Saban')">Saban <span class="count-badge" id="count-saban">(0)</span></button>
             </div>
             <div id="stats" class="stats-text">Loading data...</div>
         </div>
