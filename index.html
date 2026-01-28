@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargo Status System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="gov-header">
+        <div class="logo-container">
+            <div class="logo-circle">
+                <span class="logo-icon">⚖️</span>
+            </div>
+            <div class="header-titles">
+                <h1>Cargo Status System</h1>
+                <div class="subtitle">Public Tracking Portal</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="search-panel">
+            <input type="text" id="searchInput" placeholder="Search by Cargo ID..." onkeyup="filterTable()">
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" onclick="setFilter('Approved')">Approved</button>
+                <button class="filter-btn" onclick="setFilter('Rejected')">Rejected</button>
+            </div>
+            <div id="stats" class="stats-text">Loading data...</div>
+        </div>
+
+        <div class="table-container">
+            <table id="cargoTable">
+                <thead>
+                    <tr>
+                        <th>Cargo ID</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
