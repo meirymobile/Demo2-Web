@@ -2,7 +2,7 @@
 let cargoData = [];
 // Default to 'Approved' or let user click? Let's default to 'Approved' as it's common, or keep 'all' logic if we want to show everything initially? 
 // The user request implies 3 specific views. I will default to 'Approved'.
-let currentFilter = 'Approved'; 
+let currentFilter = 'Approved';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Set initial active state
@@ -12,16 +12,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchData() {
     try {
-        const response = await fetch('data.json');
+        // Add cache busting to prevent browser from using stale data
+        const response = await fetch('data.json?t=' + new Date().getTime());
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         cargoData = await response.json();
-        
+
         updateCounts();
         // Re-run filter to ensure table allows shows data based on the default filter
         filterTable();
         updateStats();
     } catch (error) {
         console.error('Error loading data:', error);
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="2">Error loading data.</td></tr>';
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" style="text-align:center; color: red;">Error loading data: ${error.message}. <br>Please try refreshing the page.</td></tr>`;
     }
 }
 
@@ -53,7 +59,7 @@ function renderTable(data) {
         if (item.status === 'Approved') statusClass = 'status-approved';
         else if (item.status === 'Rejected') statusClass = 'status-rejected';
         else if (item.status === 'Saban') statusClass = 'status-saban';
-        
+
         tr.innerHTML = `
             <td><strong>${item.id}</strong></td>
             <td><span class="status ${statusClass}">${item.status}</span></td>
@@ -79,21 +85,21 @@ function filterTable() {
 function setFilter(status) {
     currentFilter = status;
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    
+
     // map status to button id
     const btnId = 'btn-' + status.toLowerCase();
     const btn = document.getElementById(btnId);
-    if(btn) btn.classList.add('active');
-    
+    if (btn) btn.classList.add('active');
+
     filterTable();
 }
 
 function updateStats(count) {
     // If count is undefined, it might be initial load or something
     if (typeof count === 'undefined') {
-         // Default to showing count of current filter
-         const filtered = cargoData.filter(item => item.status === currentFilter);
-         count = filtered.length;
+        // Default to showing count of current filter
+        const filtered = cargoData.filter(item => item.status === currentFilter);
+        count = filtered.length;
     }
     document.getElementById('stats').textContent = `Showing ${count} items`;
 }
