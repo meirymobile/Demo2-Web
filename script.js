@@ -1,44 +1,82 @@
-
 let cargoData = [];
-// Default to 'Approved' or let user click? Let's default to 'Approved' as it's common, or keep 'all' logic if we want to show everything initially? 
-// The user request implies 3 specific views. I will default to 'Approved'.
-let currentFilter = 'Approved';
+let myChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Set initial active state
-    setFilter(currentFilter);
     fetchData();
 });
 
 async function fetchData() {
     try {
-        // Add cache busting to prevent browser from using stale data
+        // Cache busting
         const response = await fetch('data.json?t=' + new Date().getTime());
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
 
         cargoData = await response.json();
 
-        updateCounts();
-        // Re-run filter to ensure table allows shows data based on the default filter
-        filterTable();
+        updateLastUpdated();
+        initChart();
         updateStats();
+        filterTable();
+
     } catch (error) {
-        console.error('Error loading data:', error);
-        document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" style="text-align:center; color: red;">Error loading data: ${error.message}. <br>Please try refreshing the page.</td></tr>`;
+        console.error('Error fetching data:', error);
+        document.getElementById('last-updated').textContent = 'Error loading data.';
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" class="error">Failed to load data.</td></tr>`;
     }
 }
 
-function updateCounts() {
-    const approvedCount = cargoData.filter(item => item.status === 'Approved').length;
-    const rejectedCount = cargoData.filter(item => item.status === 'Rejected').length;
-    const sabanCount = cargoData.filter(item => item.status === 'Saban').length;
+function updateLastUpdated() {
+    const now = new Date();
+    document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleTimeString()}`;
+}
 
-    document.getElementById('count-approved').textContent = `(${approvedCount})`;
-    document.getElementById('count-rejected').textContent = `(${rejectedCount})`;
-    document.getElementById('count-saban').textContent = `(${sabanCount})`;
+function getCounts(data) {
+    const approved = data.filter(i => i.status === 'Approved').length;
+    const rejected = data.filter(i => i.status === 'Rejected').length;
+    const saban = data.filter(i => i.status === 'Saban').length;
+    return { approved, rejected, saban };
+}
+
+function initChart() {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    const { approved, rejected, saban } = getCounts(cargoData);
+
+    const config = {
+        type: 'pie',
+        data: {
+            labels: ['Approved', 'Rejected', 'Saban'],
+            datasets: [{
+                data: [approved, rejected, saban],
+                backgroundColor: [
+                    '#2ecc71', // Green for Approved
+                    '#e74c3c', // Red for Rejected
+                    '#f1c40f'  // Yellow/Orange for Saban
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    };
+
+    if (myChart) {
+        myChart.destroy();
+    }
+    myChart = new Chart(ctx, config);
+}
+
+function updateStats() {
+    const { approved, rejected, saban } = getCounts(cargoData);
+    document.getElementById('count-approved').textContent = approved;
+    document.getElementById('count-rejected').textContent = rejected;
+    document.getElementById('count-saban').textContent = saban;
 }
 
 function renderTable(data) {
@@ -46,60 +84,134 @@ function renderTable(data) {
     tbody.innerHTML = '';
 
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 2rem; color: #888;">No results found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2" class="no-results">No matches found</td></tr>';
         return;
     }
 
-    // Limit display for performance if needed, though 500 is fine
-    const displayData = data.slice(0, 500);
-
-    displayData.forEach(item => {
+    // Limit to 500 for performance
+    const fragment = document.createDocumentFragment();
+    data.slice(0, 500).forEach(item => {
         const tr = document.createElement('tr');
-        let statusClass = '';
-        if (item.status === 'Approved') statusClass = 'status-approved';
-        else if (item.status === 'Rejected') statusClass = 'status-rejected';
-        else if (item.status === 'Saban') statusClass = 'status-saban';
-
+        const statusClass = item.status ? item.status.toLowerCase() : '';
         tr.innerHTML = `
-            <td><strong>${item.id}</strong></td>
-            <td><span class="status ${statusClass}">${item.status}</span></td>
+            <td>${item.id}</td>
+            <td><span class="badge ${statusClass}">${item.status}</span></td>
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
     });
+    tbody.appendChild(fragment);
 }
 
 function filterTable() {
-    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const filter = document.getElementById('statusFilter').value;
 
     const filtered = cargoData.filter(item => {
-        const matchesSearch = item.id.toString().toLowerCase().includes(searchVal);
-        // Strict equality for status since we removed 'all' option
-        const matchesStatus = item.status === currentFilter;
-        return matchesSearch && matchesStatus;
+        const matchesId = item.id.toString().toLowerCase().includes(search);
+        const matchesStatus = filter === 'All' || item.status === filter;
+        return matchesId && matchesStatus;
     });
 
+    document.getElementById('stats').textContent = `Showing ${filtered.length} of ${cargoData.length} entries`;
     renderTable(filtered);
-    updateStats(filtered.length);
 }
 
-function setFilter(status) {
-    currentFilter = status;
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+// --- Barcode Scanner Logic ---
+let html5QrCode;
 
-    // map status to button id
-    const btnId = 'btn-' + status.toLowerCase();
-    const btn = document.getElementById(btnId);
-    if (btn) btn.classList.add('active');
+document.addEventListener('DOMContentLoaded', () => {
+    const scanBtn = document.getElementById('scanBtn');
+    const modal = document.getElementById('scannerModal');
+    const closeModal = document.querySelector('.close-modal');
 
-    filterTable();
-}
+    // Open Scanner
+    scanBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+        startScanner();
+    });
 
-function updateStats(count) {
-    // If count is undefined, it might be initial load or something
-    if (typeof count === 'undefined') {
-        // Default to showing count of current filter
-        const filtered = cargoData.filter(item => item.status === currentFilter);
-        count = filtered.length;
+    // Close Modal
+    closeModal.addEventListener('click', () => {
+        stopScanner();
+    });
+
+    // Close on click outside
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            stopScanner();
+        }
+    });
+});
+
+function startScanner() {
+    // Adjust qrbox to be wider for barcodes
+    const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.0
+    };
+
+    // If instance exists, just start it. If not, create it.
+    if (!html5QrCode) {
+        // Explicitly request 1D barcode formats + QR
+        // Note: html5-qrcode library exports Html5QrcodeSupportedFormats
+        html5QrCode = new Html5Qrcode("reader", {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODABAR
+            ]
+        });
     }
-    document.getElementById('stats').textContent = `Showing ${count} items`;
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess,
+        onScanFailure
+    ).catch(err => {
+        console.error("Error starting scanner", err);
+        alert("Error starting camera: " + err);
+        stopScanner();
+    });
+}
+
+async function stopScanner() {
+    const modal = document.getElementById('scannerModal');
+    if (html5QrCode) {
+        try {
+            await html5QrCode.stop();
+            // html5QrCode.clear(); // Removing this as it removes the element content, sometimes tricky
+        } catch (error) {
+            console.log("Scanner stop error (ignore if not running):", error);
+        }
+    }
+    modal.classList.remove('active');
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Handle the scanned code
+    console.log(`Scan result: ${decodedText}`, decodedResult);
+
+    // Stop scanner and close modal
+    stopScanner();
+
+    // Update search field
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = decodedText;
+
+    // Trigger filter
+    filterTable();
+
+    // Optional: Visual feedback
+    // alert("Scanned: " + decodedText);
+}
+
+function onScanFailure(error) {
+    // console.warn(`Code scan error = ${error}`);
 }

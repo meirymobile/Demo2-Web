@@ -4,50 +4,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cargo Status System</title>
+    <title>Cargo Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 
 <body>
+    <div class="container">
+        <header>
+            <h1>Cargo Status Dashboard</h1>
+            <p id="last-updated">Loading data...</p>
+        </header>
 
-    <header class="gov-header">
-        <div class="logo-container">
-            <div class="logo-circle">
-                <span class="logo-icon">⚖️</span>
+        <div class="dashboard-grid">
+            <!-- Chart Section -->
+            <div class="card chart-container">
+                <h2>Overview</h2>
+                <div class="chart-wrapper">
+                    <canvas id="statusChart"></canvas>
+                </div>
             </div>
-            <div class="header-titles">
-                <h1>Cargo Status System</h1>
-                <div class="subtitle">Public Tracking Portal</div>
+
+            <!-- Stats Cards -->
+            <div class="stats-row">
+                <div class="stat-card approved">
+                    <h3>Approved</h3>
+                    <span id="count-approved">0</span>
+                </div>
+                <div class="stat-card rejected">
+                    <h3>Rejected</h3>
+                    <span id="count-rejected">0</span>
+                </div>
+                <div class="stat-card saban">
+                    <h3>Saban</h3>
+                    <span id="count-saban">0</span>
+                </div>
             </div>
         </div>
-    </header>
 
-    <main class="container">
-        <div class="search-panel">
-            <input type="text" id="searchInput" placeholder="Search by Cargo ID..." onkeyup="filterTable()">
-            <div class="filter-group">
-                <button class="filter-btn" id="btn-approved" onclick="setFilter('Approved')">Approved <span class="count-badge" id="count-approved">(0)</span></button>
-                <button class="filter-btn" id="btn-rejected" onclick="setFilter('Rejected')">Rejected <span class="count-badge" id="count-rejected">(0)</span></button>
-                <button class="filter-btn" id="btn-saban" onclick="setFilter('Saban')">Saban <span class="count-badge" id="count-saban">(0)</span></button>
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" placeholder="Search by ID..." onkeyup="filterTable()">
+                <button id="scanBtn" class="icon-btn" title="Scan Barcode">
+                    <!-- Camera Icon (SVG) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                        </path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </button>
             </div>
-            <div id="stats" class="stats-text">Loading data...</div>
+            <select id="statusFilter" onchange="filterTable()">
+                <option value="All">All Statuses</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Saban">Saban</option>
+            </select>
         </div>
 
+        <!-- Table -->
         <div class="table-container">
-            <table id="cargoTable">
+            <p id="stats" class="table-stats"></p>
+            <table>
                 <thead>
                     <tr>
-                        <th>Cargo ID</th>
+                        <th>ID</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Data injected here -->
+                    <!-- Rows will be populated by JS -->
                 </tbody>
             </table>
         </div>
-    </main>
+    </div>
+
+    <!-- Scanner Modal -->
+    <div id="scannerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Scan Barcode</h2>
+            <div id="reader"></div>
+            <p class="modal-hint">Point camera at a barcode</p>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
