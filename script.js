@@ -144,17 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function startScanner() {
-    // Adjust qrbox to be wider for barcodes
+    // Config optimized for 1D barcodes
+    // Removing aspectRatio to avoid distortion
     const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.0
+        fps: 20,
+        qrbox: { width: 300, height: 200 }
     };
 
     // If instance exists, just start it. If not, create it.
     if (!html5QrCode) {
         // Explicitly request 1D barcode formats + QR
-        // Note: html5-qrcode library exports Html5QrcodeSupportedFormats
         html5QrCode = new Html5Qrcode("reader", {
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.QR_CODE,
@@ -165,7 +164,8 @@ function startScanner() {
                 Html5QrcodeSupportedFormats.UPC_A,
                 Html5QrcodeSupportedFormats.UPC_E,
                 Html5QrcodeSupportedFormats.CODABAR
-            ]
+            ],
+            verbose: false
         });
     }
 
