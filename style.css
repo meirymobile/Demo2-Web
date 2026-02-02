@@ -61,9 +61,26 @@ header h1 {
 
 .chart-wrapper {
     position: relative;
-    height: 300px;
+    height: 200px;
+    /* Reduced from 300px */
     width: 100%;
-    max-width: 400px;
+    max-width: 300px;
+    /* Reduced from 400px */
+}
+
+.options-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 10px;
+}
+
+.options-btn:hover {
+    color: #333;
+    background-color: #f0f0f0;
+    border-radius: 4px;
 }
 
 .stats-row {
@@ -205,6 +222,25 @@ header h1 {
 
 .close-modal:hover,
 .close-modal:focus {
+    color: black;
+    text-decoration: none;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.close-note-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+}
+
+.close-note-modal:hover,
+.close-note-modal:focus {
     color: black;
     text-decoration: none;
     cursor: pointer;

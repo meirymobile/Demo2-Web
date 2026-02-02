@@ -201,6 +201,8 @@ async function stopScanner() {
     modal.classList.remove('active');
 }
 
+let scannedItems = [];
+
 function onScanSuccess(decodedText, decodedResult) {
     // Handle the scanned code
     console.log(`Scan result: ${decodedText}`, decodedResult);
@@ -215,10 +217,144 @@ function onScanSuccess(decodedText, decodedResult) {
     // Trigger filter
     filterTable();
 
-    // Optional: Visual feedback
-    // alert("Scanned: " + decodedText);
+    // Add to scanned list
+    addToScannedList(decodedText);
+}
+
+function addToScannedList(barcode) {
+    // Find item in cargoData
+    const item = cargoData.find(i => i.id.toString() === barcode.toString());
+
+    // Create entry
+    const entry = {
+        barcode: barcode,
+        id: item ? item.id : barcode,
+        status: item ? item.status : 'Not Found',
+        notes: '',
+        timestamp: new Date().toISOString()
+    };
+
+    scannedItems.push(entry);
+    renderScannedList();
+}
+
+function renderScannedList() {
+    const tbody = document.getElementById('scannedTableBody');
+    tbody.innerHTML = '';
+
+    scannedItems.forEach((item, index) => {
+        const tr = document.createElement('tr');
+
+        let statusClass = '';
+        if (item.status === 'Approved') statusClass = 'approved';
+        else if (item.status === 'Rejected') statusClass = 'rejected';
+        else if (item.status === 'Saban') statusClass = 'saban';
+        else statusClass = 'error'; // For Not Found
+
+        tr.innerHTML = `
+            <td>${item.id}</td>
+            <td><span class="badge ${statusClass}">${item.status}</span></td>
+            <td>
+                <button class="options-btn" onclick="openNoteModal(${index})" title="Edit Note">
+                    ⋮
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function onScanFailure(error) {
     // console.warn(`Code scan error = ${error}`);
+}
+
+// --- Notes & Sharing Logic ---
+let currentNoteIndex = -1;
+
+function openNoteModal(index) {
+    currentNoteIndex = index;
+    const modal = document.getElementById('noteModal');
+    const noteInput = document.getElementById('noteInput');
+    noteInput.value = scannedItems[index].notes || '';
+    modal.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing event listeners ...
+
+    // Note Modal
+    const noteModal = document.getElementById('noteModal');
+    const closeNoteBtn = document.querySelector('.close-note-modal');
+    const saveNoteBtn = document.getElementById('saveNoteBtn');
+
+    closeNoteBtn.addEventListener('click', () => {
+        noteModal.classList.remove('active');
+    });
+
+    saveNoteBtn.addEventListener('click', () => {
+        if (currentNoteIndex > -1) {
+            const noteInput = document.getElementById('noteInput');
+            scannedItems[currentNoteIndex].notes = noteInput.value;
+            noteModal.classList.remove('active');
+            // Optional: visual feedback that note is saved?
+        }
+    });
+
+    // Share & Download
+    document.getElementById('shareBtn').addEventListener('click', shareList);
+    document.getElementById('downloadBtn').addEventListener('click', exportCSV);
+
+    // Close note modal on outside click
+    window.addEventListener('click', (event) => {
+        if (event.target === noteModal) {
+            noteModal.classList.remove('active');
+        }
+    });
+});
+
+function generateCSV() {
+    const now = new Date().toLocaleString();
+    let csvContent = `Date: ${now}\n`;
+    csvContent += "ID/Barcode,Status,Notes\n";
+
+    scannedItems.forEach(item => {
+        // Escape quotes in notes if necessary
+        const safeNotes = item.notes.replace(/"/g, '""');
+        csvContent += `${item.id},${item.status},"${safeNotes}"\n`;
+    });
+    return csvContent;
+}
+
+function exportCSV() {
+    const csvContent = generateCSV();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `scan_session_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function shareList() {
+    const csvContent = generateCSV();
+    const file = new File([csvContent], "scan_list.csv", { type: "text/csv" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({
+                title: 'Cargo Scan List',
+                text: 'Here is the list of scanned cargo items.',
+                files: [file]
+            });
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    } else {
+        // Fallback or alert
+        alert("Sharing not supported on this device/browser. Downloading instead.");
+        exportCSV();
+    }
 }

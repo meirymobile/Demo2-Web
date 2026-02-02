@@ -93,6 +93,45 @@
         </div>
     </div>
 
+    <!-- Note Edit Modal -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-note-modal">&times;</span>
+            <h2>Edit Note</h2>
+            <textarea id="noteInput" rows="4" style="width: 100%; margin-bottom: 10px;"
+                placeholder="Enter note..."></textarea>
+            <button id="saveNoteBtn"
+                style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Save
+                Note</button>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 40px;">
+        <h2>Scanned Session</h2>
+        <div class="controls">
+            <button id="shareBtn" class="icon-btn" style="width: auto; padding: 10px 20px;">
+                Share List
+            </button>
+            <button id="downloadBtn" class="icon-btn" style="width: auto; padding: 10px 20px;">
+                Download CSV
+            </button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID / Barcode</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="scannedTableBody">
+                    <!-- Scanned rows -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 
