@@ -195,7 +195,12 @@ function startScanner() {
     // Standard config logic
     const config = {
         fps: 15, // Balanced FPS
-        qrbox: { width: 250, height: 250 } // Constrain scanning to a box. Fixes "frame too big" issues.
+        qrbox: { width: 250, height: 250 }, // Constrain scanning to a box. Fixes "frame too big" issues.
+        videoConstraints: {
+            width: { min: 640, ideal: 1920, max: 3840 },
+            height: { min: 480, ideal: 1080, max: 2160 },
+            focusMode: "continuous"
+        }
     };
 
     // If instance exists, just start it. If not, create it.
@@ -204,12 +209,7 @@ function startScanner() {
     }
 
     const startConfig = {
-        facingMode: "environment",
-        videoConstraints: {
-            width: { min: 640, ideal: 1920, max: 3840 },
-            height: { min: 480, ideal: 1080, max: 2160 },
-            focusMode: "continuous"
-        }
+        facingMode: "environment"
     };
 
     html5QrCode.start(
