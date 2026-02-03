@@ -214,6 +214,8 @@ function startScanner() {
     Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
             availableCameras = devices;
+            // DEBUG: Show what cameras we found
+            alert(`Debug: Found ${availableCameras.length} cameras: ` + availableCameras.map(c => c.label).join(', '));
 
             // Try to find back camera for initial load if not set
             if (availableCameras.length > 1) {
@@ -260,6 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (switchCameraBtn) {
         switchCameraBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            // DEBUG: Check click
+            alert(`Switch clicked. Available: ${availableCameras.length}. Current Index: ${currentCameraIndex}`);
+
             if (availableCameras.length < 2) return;
 
             // Cycle index
