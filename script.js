@@ -204,14 +204,15 @@ function updateCameraLabel() {
 }
 
 function startScanner() {
-    // Simplified config
+    // Simplified config - REMOVED qrbox to allow full scanning
     const config = {
-        fps: 20, // Higher FPS for smoother tracking
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
+        fps: 20,
+        aspectRatio: 1.0,
+        verbose: true // Enabled for debug
     };
 
     if (!html5QrCode) {
+        // Use shared config with ALL formats
         html5QrCode = new Html5Qrcode("reader", scannerConfig);
     }
 
@@ -601,7 +602,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Confirm Crop & Scan
     if (confirmCropBtn) {
         confirmCropBtn.addEventListener('click', async () => {
-            if (!cropper) return;
+            alert("DEBUG: Crop Button Clicked"); // DEBUG ALERT
+            if (!cropper) {
+                alert("Error: No cropper instance");
+                return;
+            }
             const canvas = cropper.getCroppedCanvas();
             cropModal.classList.remove('active');
             loadingOverlay.classList.add('active');
