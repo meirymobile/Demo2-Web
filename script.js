@@ -144,38 +144,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function startScanner() {
-    // Config optimized for 1D barcodes
+    // Standard config logic
     const config = {
-        fps: 20, // Back to 20fps for faster scanning
-        qrbox: { width: 300, height: 200 } // Rectangular box better for 1D barcodes
+        fps: 15, // Balanced FPS
+        // qrbox: { width: 300, height: 200 } // REMOVED: Scanning the whole frame is often more reliable
     };
 
     // If instance exists, just start it. If not, create it.
     if (!html5QrCode) {
-        // Explicitly request 1D barcode formats + QR (Reverting to original list)
+        // Initialize without specific formats to allow the library to auto-detect all types
+        // This is often more robust than a hardcoded list
         html5QrCode = new Html5Qrcode("reader", {
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.CODE_93,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODABAR,
-                Html5QrcodeSupportedFormats.PDF_417,
-                Html5QrcodeSupportedFormats.DATA_MATRIX,
-                Html5QrcodeSupportedFormats.AZTEC,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.RSS_14,
-                Html5QrcodeSupportedFormats.RSS_EXPANDED
-            ],
             verbose: false
         });
     }
 
-    const startConfig = { facingMode: "environment" };
+    const startConfig = {
+        facingMode: "environment"
+    };
 
     html5QrCode.start(
         startConfig,
