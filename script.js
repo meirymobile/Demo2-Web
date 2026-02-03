@@ -114,10 +114,12 @@ function filterTable() {
 
     // Show/Hide Clear Button
     const clearBtn = document.getElementById('clearSearchBtn');
-    if (search.length > 0) {
-        clearBtn.style.display = 'block';
-    } else {
-        clearBtn.style.display = 'none';
+    if (clearBtn) {
+        if (search.length > 0) {
+            clearBtn.style.display = 'block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
     }
 
     document.getElementById('stats').textContent = `Showing ${filtered.length} of ${cargoData.length} entries`;
@@ -129,11 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clearSearchBtn');
     const searchInput = document.getElementById('searchInput');
 
-    clearBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        filterTable();
-        searchInput.focus();
-    });
+    if (clearBtn && searchInput) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            filterTable();
+            searchInput.focus();
+        });
+    }
 });
 
 // --- Barcode Scanner Logic ---
