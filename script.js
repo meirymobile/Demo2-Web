@@ -20,8 +20,8 @@ async function fetchData() {
 
     } catch (error) {
         console.error('Error fetching data:', error);
-        document.getElementById('last-updated').textContent = 'Error loading data.';
-        document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" class="error">Failed to load data.</td></tr>`;
+        document.getElementById('last-updated').textContent = 'Error: ' + error.message;
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" class="error">Failed to load data: ${error.message}</td></tr>`;
     }
 }
 
