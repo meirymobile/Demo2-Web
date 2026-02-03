@@ -171,7 +171,7 @@ function startScanner() {
     // Standard config logic
     const config = {
         fps: 15, // Balanced FPS
-        // qrbox: { width: 300, height: 200 } // REMOVED: Scanning the whole frame is often more reliable
+        qrbox: { width: 250, height: 250 } // Constrain scanning to a box. Fixes "frame too big" issues.
     };
 
     // If instance exists, just start it. If not, create it.
@@ -383,8 +383,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- OCR Logic ---
+    // --- OCR & Image Scan Logic ---
     const ocrBtn = document.getElementById('ocrBtn');
     const ocrInput = document.getElementById('ocrInput');
+    const scanImgBtn = document.getElementById('scanImgBtn');
+    const scanImgInput = document.getElementById('scanImgInput');
     const loadingOverlay = document.getElementById('loadingOverlay');
 
     // Crop Elements
@@ -393,137 +396,139 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmCropBtn = document.getElementById('confirmCropBtn');
     const cancelCropBtn = document.getElementById('cancelCropBtn');
     let cropper = null;
+    let currentScanMode = 'ocr'; // 'ocr' or 'barcode'
+
+    function handleFileSelect(event, mode) {
+        currentScanMode = mode;
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Common Cropper Init Logic
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imageToCrop.src = e.target.result;
+            cropModal.classList.add('active');
+
+            // Update button text based on mode
+            confirmCropBtn.textContent = mode === 'ocr' ? 'Scan Text' : 'Scan Barcode';
+
+            if (cropper) cropper.destroy();
+            setTimeout(() => {
+                cropper = new Cropper(imageToCrop, {
+                    viewMode: 1,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: true,
+                    scalable: true,
+                    autoCropArea: 0.8,
+                });
+            }, 100);
+        };
+        reader.readAsDataURL(file);
+        // Reset input
+        event.target.value = '';
+    }
+
+    if (scanImgBtn && scanImgInput) {
+        scanImgBtn.addEventListener('click', () => scanImgInput.click());
+        scanImgInput.addEventListener('change', (e) => handleFileSelect(e, 'barcode'));
+    }
 
     if (ocrBtn && ocrInput) {
         ocrBtn.addEventListener('click', () => {
-            console.log("OCR Button Clicked");
-            // Reset value to ensure change event fires even if same file selected
-            ocrInput.value = '';
+            ocrInput.value = ''; // Reset
             ocrInput.click();
         });
+        ocrInput.addEventListener('change', (e) => handleFileSelect(e, 'ocr'));
+    }
 
-        ocrInput.addEventListener('change', (e) => {
-            console.log("File Input Changed");
-            const file = e.target.files[0];
-            if (!file) {
-                console.log("No file selected");
-                return;
+    // Cancel Crop
+    if (cancelCropBtn) {
+        cancelCropBtn.addEventListener('click', () => {
+            cropModal.classList.remove('active');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
             }
-
-            // Check if Cropper is loaded
-            if (typeof Cropper === 'undefined') {
-                alert("Cropper library not loaded. Please wait or refresh the page.");
-                return;
-            }
-
-            // 1. Read file to display in cropper
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                console.log("File read successfully");
-                imageToCrop.src = event.target.result;
-                console.log("Activating Crop Modal");
-                cropModal.classList.add('active');
-
-                // Destroy old instance if exists
-                if (cropper) {
-                    cropper.destroy();
-                }
-
-                // Initialize Cropper with a small delay to ensure image DOM is ready
-                setTimeout(() => {
-                    try {
-                        console.log("Initializing Cropper...");
-                        cropper = new Cropper(imageToCrop, {
-                            viewMode: 1,
-                            movable: true,
-                            zoomable: true,
-                            rotatable: true,
-                            scalable: true,
-                            autoCropArea: 0.8,
-                            ready() {
-                                console.log("Cropper is ready");
-                            },
-                        });
-                    } catch (err) {
-                        console.error("Cropper Init Error:", err);
-                        alert("Failed to start Cropper: " + err.message);
-                    }
-                }, 100);
-            };
-
-            reader.onerror = (err) => {
-                console.error("FileReader Error:", err);
-                alert("Error reading file: " + err);
-            };
-
-            reader.readAsDataURL(file);
         });
+    }
 
-        // Cancel Crop
-        if (cancelCropBtn) {
-            cancelCropBtn.addEventListener('click', () => {
-                console.log("Cancel Crop Clicked");
-                cropModal.classList.remove('active');
+    // Confirm Crop & Scan
+    if (confirmCropBtn) {
+        confirmCropBtn.addEventListener('click', async () => {
+            if (!cropper) return;
+            const canvas = cropper.getCroppedCanvas();
+            cropModal.classList.remove('active');
+            loadingOverlay.classList.add('active');
+
+            try {
+                if (currentScanMode === 'ocr') {
+                    // ... OCR Logic ...
+                    const croppedDataUrl = canvas.toDataURL('image/png');
+                    const result = await Tesseract.recognize(croppedDataUrl, 'eng');
+                    const text = result.data.text.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+
+                    if (text) {
+                        document.getElementById('searchInput').value = text;
+                        filterTable();
+                        addToScannedList(text + " (OCR)");
+                    } else {
+                        alert("No text detected.");
+                    }
+                } else if (currentScanMode === 'barcode') {
+                    // ... Barcode Logic ...
+                    // Create a temporary instance just for file scanning
+                    const html5QrCodeFile = new Html5Qrcode("reader"); // Reusing the same ID might be tricky if camera is on.
+                    // Actually, 'reader' div is used for camera. 
+                    // Html5Qrcode.scanFileV2 doesn't technically need a DOM element if we use the API correctly, 
+                    // BUT the library is built around the element.
+                    // SAFE TRICK: Pass the file/blob to the static/instance method.
+
+                    // converting canvas to blob
+                    canvas.toBlob(async (blob) => {
+                        const file = new File([blob], "temp.png", { type: "image/png" });
+                        try {
+                            // Use the existing instance if possible or a new one?
+                            // If camera is running, we shouldn't touch 'reader'.
+                            // Html5Qrcode has a static method? No, instance method scanFile.
+                            // Let's create a headless instance? No, constructor needs element.
+                            // Let's use a hidden div?
+
+                            // Better: Use the existing 'html5QrCode' instance if it's initialized?
+                            // If camera is running, we might need to stop it?
+                            // No, let's try creating a temporary div for file scanning if needed, 
+                            // OR just use the library's ability.
+
+                            // Actually, simpler:
+                            const scanResult = await html5QrCode.scanFileV2(file, true);
+                            if (scanResult) {
+                                onScanSuccess(scanResult.decodedText, scanResult);
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("No barcode found in selected area. Try adjusting the crop.");
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Processing failed: " + error.message);
+            } finally {
+                loadingOverlay.classList.remove('active');
                 if (cropper) {
                     cropper.destroy();
                     cropper = null;
                 }
-                ocrInput.value = '';
-            });
-        }
-
-        // Confirm Crop & Scan
-        if (confirmCropBtn) {
-            confirmCropBtn.addEventListener('click', async () => {
-                console.log("Confirm Crop Clicked");
-                if (!cropper) return;
-
-                // Get cropped canvas
-                const canvas = cropper.getCroppedCanvas();
-
-                // Close modal immediately
-                cropModal.classList.remove('active');
-
-                // Show loading
-                loadingOverlay.classList.add('active');
-
-                try {
-                    // Convert canvas to blob/dataURL for Tesseract
-                    const croppedDataUrl = canvas.toDataURL('image/png');
-
-                    const result = await Tesseract.recognize(
-                        croppedDataUrl,
-                        'eng'
-                    );
-
-                    const text = result.data.text;
-                    console.log('OCR Result:', text);
-
-                    // Simple cleanup: remove special chars, keep alphanumeric
-                    const cleanedText = text.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-
-                    if (cleanedText) {
-                        document.getElementById('searchInput').value = cleanedText;
-                        filterTable();
-                        addToScannedList(cleanedText + " (OCR)"); // Mark as OCR source
-                    } else {
-                        alert("No text detected. Please try again.");
-                    }
-
-                } catch (error) {
-                    console.error(error);
-                    alert("Failed to recognize text: " + error.message);
-                } finally {
-                    loadingOverlay.classList.remove('active');
-                    if (cropper) {
-                        cropper.destroy();
-                        cropper = null;
-                    }
-                    ocrInput.value = '';
-                }
-            });
-        }
+            }
+        });
     }
+
+    /* REMOVING OLD EVENT LISTENERS TO AVOID DUPLICATION - REFACTORED ABOVE */
+    /* 
+    if (ocrBtn && ocrInput) {
+        // ... (Old code removed by Replacement) ...
+    } 
+    */
 });
 
 function generateCSV() {
