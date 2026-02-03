@@ -202,9 +202,10 @@ header h1 {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-    /* Black w/ opacity */
+    overflow: hidden;
+    /* Prevent body scroll when modal is active */
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Darker background */
     align-items: center;
     justify-content: center;
 }
@@ -215,10 +216,16 @@ header h1 {
 
 .modal-content {
     background-color: #fefefe;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
-    width: 90%;
+    width: 95%;
     max-width: 500px;
+    max-height: 90vh;
+    /* Limit height to viewport */
+    display: flex;
+    /* Flex layout */
+    flex-direction: column;
+    /* Stack children */
     position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
@@ -226,48 +233,47 @@ header h1 {
 
 .close-modal {
     color: #aaa;
-    float: right;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    /* Position absolute handled by flex header or kept here if needed */
     position: absolute;
     right: 15px;
     top: 10px;
+    z-index: 10;
 }
 
-.close-modal:hover,
-.close-modal:focus {
-    color: black;
-    text-decoration: none;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.close-note-modal {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    right: 15px;
-    top: 10px;
-}
-
-.close-note-modal:hover,
-.close-note-modal:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
+/* Ensure header elements don't overlap close button or look weird */
+.scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-right: 30px;
+    /* Space for close button */
 }
 
 #reader {
     width: 100%;
-    min-height: 300px;
+    flex: 1;
+    /* Take remaining space */
     background-color: #000;
-    margin-top: 10px;
+    min-height: 200px;
+    /* Minimum height */
     border-radius: 4px;
     overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Force video to fit container */
+#reader video {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 70vh !important;
+    object-fit: contain !important;
 }
 
 .modal-hint {
