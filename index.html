@@ -7,8 +7,8 @@
     <title>Cargo Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+    <!-- Tesseract.js CDN -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 </head>
 
 <body>
@@ -19,6 +19,7 @@
         </header>
 
         <div class="dashboard-grid">
+            <!-- ... (Keep Chart and Stats as is) ... -->
             <!-- Chart Section -->
             <div class="card chart-container">
                 <h2>Overview</h2>
@@ -57,6 +58,15 @@
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
                 </button>
+                <button id="ocrBtn" class="icon-btn" title="Scan Text (OCR)">
+                    <!-- Text Scan Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+                    </svg>
+                </button>
+                <!-- Hidden file input for OCR -->
+                <input type="file" id="ocrInput" capture="environment" accept="image/*" style="display: none;">
             </div>
             <select id="statusFilter" onchange="filterTable()">
                 <option value="All">All Statuses</option>
@@ -136,6 +146,14 @@
                     <!-- Scanned rows -->
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 300px;">
+            <h3>Processing Text...</h3>
+            <p>Please wait.</p>
         </div>
     </div>
 

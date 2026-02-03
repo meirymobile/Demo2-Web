@@ -324,6 +324,56 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
         }
     });
+
+    // --- OCR Logic ---
+    const ocrBtn = document.getElementById('ocrBtn');
+    const ocrInput = document.getElementById('ocrInput');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    if (ocrBtn && ocrInput) {
+        ocrBtn.addEventListener('click', () => {
+            ocrInput.click();
+        });
+
+        ocrInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Show loading
+            loadingOverlay.classList.add('active');
+
+            try {
+                const result = await Tesseract.recognize(
+                    file,
+                    'eng', // Language
+                    {
+                        // logger: m => console.log(m) // Optional logging
+                    }
+                );
+
+                const text = result.data.text;
+                console.log('OCR Result:', text);
+
+                // Simple cleanup: remove special chars, keep alphanumeric
+                const cleanedText = text.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+
+                if (cleanedText) {
+                    document.getElementById('searchInput').value = cleanedText;
+                    filterTable();
+                    addToScannedList(cleanedText + " (OCR)"); // Mark as OCR source
+                } else {
+                    alert("No text detected. Please try again.");
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Failed to recognize text: " + error.message);
+            } finally {
+                loadingOverlay.classList.remove('active');
+                ocrInput.value = ''; // Reset input
+            }
+        });
+    }
 });
 
 function generateCSV() {
