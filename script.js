@@ -682,14 +682,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
 
                             // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues
-                            const scanResult = await html5QrCode.scanFileV2(file, false);
-                            if (scanResult) {
-                                processScanResult(scanResult.decodedText); // FIXED: Call processScanResult instead of onScanSuccess
+                            console.log("Starting file scan...");
+                            try {
+                                const scanResult = await html5QrCode.scanFileV2(file, false);
+                                if (scanResult) {
+                                    console.log("File Scan Success:", scanResult);
+                                    processScanResult(scanResult.decodedText);
+                                }
+                            } catch (scanErr) {
+                                console.warn("scanFileV2 failed, trying scanFile...", scanErr);
+                                // Fallback to older scanFile if V2 fails (sometimes robust for simple images)
+                                try {
+                                    const scanResult = await html5QrCode.scanFile(file, false);
+                                    processScanResult(scanResult);
+                                } catch (fallbackErr) {
+                                    throw new Error("Both scan methods failed. " + fallbackErr);
+                                }
                             }
                         } catch (err) {
                             console.error("File scan error:", err);
                             // Show specific error to user to help debug
-                            alert(`Scan failed: ${err}.\nTip: Crop tighter around the Barcode only!`);
+                            alert(`Scan failed: ${err}.\nTip: Try cropping only the barcode with high contrast.`);
                         }
                     }, 'image/png'); // Force PNG format for blob consistency
                 }
