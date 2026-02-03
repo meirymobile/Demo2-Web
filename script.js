@@ -220,10 +220,29 @@ function startScanner() {
     const overlay = document.getElementById('scannerOverlay');
     if (overlay) overlay.innerHTML = '';
 
+    // DEBUG: Create Debug Element
+    let debugEl = document.getElementById('debug-info');
+    if (!debugEl) {
+        debugEl = document.createElement('div');
+        debugEl.id = 'debug-info';
+        debugEl.style.position = 'absolute';
+        debugEl.style.top = '10px';
+        debugEl.style.left = '10px';
+        debugEl.style.background = 'rgba(0,0,0,0.7)';
+        debugEl.style.color = '#0f0';
+        debugEl.style.padding = '5px';
+        debugEl.style.fontSize = '12px';
+        debugEl.style.zIndex = '9999';
+        debugEl.style.pointerEvents = 'none';
+        document.getElementById('reader-container').appendChild(debugEl);
+    }
+    debugEl.innerHTML = "Scanner Started... Waiting for code.";
+
     // Start Cleanup Loop
     overlayInterval = setInterval(cleanupOverlays, 200);
 
     Html5Qrcode.getCameras().then(devices => {
+        // ... (rest of start logic) ...
         if (devices && devices.length) {
             availableCameras = devices;
 
@@ -253,73 +272,36 @@ function startScanner() {
             html5QrCode.start(
                 cameraId,
                 config,
-                onScanDetected, // Changed from onScanSuccess to onScanDetected
+                onScanDetected,
                 onScanFailure
             ).catch(err => {
                 console.error("Error starting scanner", err);
                 alert("Error starting camera: " + err);
                 stopScanner();
             });
-        } else {
-            console.warn("No cameras found.");
-            alert("No cameras found.");
         }
+        // ...
     }).catch(err => {
-        console.error("Error getting cameras", err);
-        alert("Error accessing camera list: " + err);
+        // ...
     });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const switchCameraBtn = document.getElementById('switchCameraBtn');
-    if (switchCameraBtn) {
-        switchCameraBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (availableCameras.length < 2) return;
-
-            // Cycle index
-            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
-            const newCameraId = availableCameras[currentCameraIndex].id;
-            updateCameraLabel();
-
-            // Restart scanner
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    // Small delay to let hardware release
-                    setTimeout(() => {
-                        const config = {
-                            fps: 20,
-                            qrbox: { width: 250, height: 250 }
-                        };
-                        html5QrCode.start(newCameraId, config, onScanDetected, onScanFailure)
-                            .catch(err => console.error("Switch Start Fail", err));
-                    }, 500);
-                }).catch(err => console.error("Switch Stop Fail", err));
-            }
-        });
-    }
-});
-
-async function stopScanner() {
-    const modal = document.getElementById('scannerModal');
-    if (html5QrCode) {
-        try {
-            // Check if scanning before stop
-            if (html5QrCode.isScanning) {
-                await html5QrCode.stop();
-            }
-        } catch (error) {
-            console.log("Scanner stop error:", error);
-        }
-    }
-    clearInterval(overlayInterval);
-    modal.classList.remove('active');
-    const overlay = document.getElementById('scannerOverlay');
-    if (overlay) overlay.innerHTML = '';
-}
+// Note: Partial replacement of startScanner to inject debugEl
 
 // New Logic: Track detected codes and draw boxes
 function onScanDetected(decodedText, decodedResult) {
+    // DEBUG OUTPUT
+    const debugEl = document.getElementById('debug-info');
+    const box = decodedResult.result.box || decodedResult.result.boundingBox;
+
+    if (debugEl) {
+        debugEl.innerHTML = `
+            Detected: ${decodedText}<br>
+            Format: ${decodedResult.result.format ? decodedResult.result.format.formatName : 'N/A'}<br>
+            Box: ${box ? JSON.stringify(box) : 'MISSING'}<br>
+            Time: ${new Date().toLocaleTimeString()}
+        `;
+    }
+
     // We do NOT stop scanning. We just track the code.
     const now = Date.now();
     detectedCodes.set(decodedText, {
@@ -365,22 +347,17 @@ function renderScanBoxes() {
     const scaleX = displayWidth / videoWidth;
     const scaleY = displayHeight / videoHeight;
 
-    // Offset if the video is centered/object-fit
-    // Assuming object-fit: contain, we need to handle letterboxing if needed.
-    // However, html5-qrcode usually fills the container or we sized it to be 100%.
-    // For simplicity, assuming direct mapping first. 
-    // If there's letterboxing (black bars), we need offsets.
-    // Let's rely on standard mapping first.
-
-    // Clear only if needed? Better to diff, but re-render is easier for now.
-    // To avoid flickering, we can just update existing or create new.
-
     // Simple Re-render
     overlay.innerHTML = '';
 
+    const debugEl = document.getElementById('debug-info');
+
     detectedCodes.forEach((data, text) => {
         const box = data.result.result.box || data.result.result.boundingBox;
-        if (!box) return;
+        if (!box) {
+            if (debugEl) debugEl.innerHTML += "<br>WARN: Box missing for " + text;
+            return;
+        }
 
         // Coordinates are usually relative to the video stream size.
 
@@ -681,16 +658,18 @@ document.addEventListener('DOMContentLoaded', () => {
                                 html5QrCode = new Html5Qrcode("reader", scannerConfig);
                             }
 
-                            // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues
+                            // scanFileV2(file, showImage)
                             console.log("Starting file scan...");
+                            alert("Debugging: Starting scanFileV2..."); // DEBUG ALERT
                             try {
                                 const scanResult = await html5QrCode.scanFileV2(file, false);
                                 if (scanResult) {
-                                    console.log("File Scan Success:", scanResult);
+                                    alert("Scan Success: " + scanResult.decodedText); // DEBUG ALERT
                                     processScanResult(scanResult.decodedText);
                                 }
                             } catch (scanErr) {
                                 console.warn("scanFileV2 failed, trying scanFile...", scanErr);
+                                alert("V2 Failed: " + scanErr + "\nTrying V1..."); // DEBUG ALERT
                                 // Fallback to older scanFile if V2 fails (sometimes robust for simple images)
                                 try {
                                     const scanResult = await html5QrCode.scanFile(file, false);
@@ -702,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (err) {
                             console.error("File scan error:", err);
                             // Show specific error to user to help debug
-                            alert(`Scan failed: ${err}.\nTip: Try cropping only the barcode with high contrast.`);
+                            alert(`Final Error: ${err}`);
                         }
                     }, 'image/png'); // Force PNG format for blob consistency
                 }
