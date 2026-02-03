@@ -544,6 +544,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (currentScanMode === 'barcode') {
                     // ... Barcode Logic ...
 
+                    // Pre-process image for better detection (Grayscale + Contrast)
+                    const ctx = canvas.getContext('2d');
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // Simple Grayscale & Contrast
+                    const contrast = 1.25; // 25% extra contrast
+                    const intercept = 128 * (1 - contrast);
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Grayscale (Luma)
+                        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+
+                        // Contrast
+                        let newGray = gray * contrast + intercept;
+                        // Clamp
+                        newGray = newGray > 255 ? 255 : (newGray < 0 ? 0 : newGray);
+
+                        data[i] = newGray;
+                        data[i + 1] = newGray;
+                        data[i + 2] = newGray;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+
                     // converting canvas to blob
                     canvas.toBlob(async (blob) => {
                         const file = new File([blob], "temp.png", { type: "image/png" });
@@ -555,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 html5QrCode = new Html5Qrcode("reader", scannerConfig);
                             }
 
-                            // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues if modal is hidden
+                            // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues
                             const scanResult = await html5QrCode.scanFileV2(file, false);
                             if (scanResult) {
                                 onScanSuccess(scanResult.decodedText, scanResult);
@@ -563,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (err) {
                             console.error("File scan error:", err);
                             // Show specific error to user to help debug
-                            alert(`Scan failed: ${err}. Try cropping tighter or clearer.`);
+                            alert(`Scan failed: ${err}.\nTip: Crop tighter around the Barcode only!`);
                         }
                     }, 'image/png'); // Force PNG format for blob consistency
                 }
