@@ -339,95 +339,133 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (ocrBtn && ocrInput) {
         ocrBtn.addEventListener('click', () => {
+            console.log("OCR Button Clicked");
             // Reset value to ensure change event fires even if same file selected
             ocrInput.value = '';
             ocrInput.click();
         });
 
         ocrInput.addEventListener('change', (e) => {
+            console.log("File Input Changed");
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                console.log("No file selected");
+                return;
+            }
+
+            // Check if Cropper is loaded
+            if (typeof Cropper === 'undefined') {
+                alert("Cropper library not loaded. Please wait or refresh the page.");
+                return;
+            }
 
             // 1. Read file to display in cropper
             const reader = new FileReader();
             reader.onload = (event) => {
+                console.log("File read successfully");
                 imageToCrop.src = event.target.result;
+                console.log("Activating Crop Modal");
                 cropModal.classList.add('active');
 
-                // Initialize Cropper
+                // Destroy old instance if exists
                 if (cropper) {
                     cropper.destroy();
                 }
-                cropper = new Cropper(imageToCrop, {
-                    viewMode: 1,
-                    movable: true,
-                    zoomable: true,
-                    rotatable: true,
-                    scalable: true,
-                    autoCropArea: 0.8, // Default 80% selection
-                });
+
+                // Initialize Cropper with a small delay to ensure image DOM is ready
+                setTimeout(() => {
+                    try {
+                        console.log("Initializing Cropper...");
+                        cropper = new Cropper(imageToCrop, {
+                            viewMode: 1,
+                            movable: true,
+                            zoomable: true,
+                            rotatable: true,
+                            scalable: true,
+                            autoCropArea: 0.8,
+                            ready() {
+                                console.log("Cropper is ready");
+                            },
+                        });
+                    } catch (err) {
+                        console.error("Cropper Init Error:", err);
+                        alert("Failed to start Cropper: " + err.message);
+                    }
+                }, 100);
             };
+
+            reader.onerror = (err) => {
+                console.error("FileReader Error:", err);
+                alert("Error reading file: " + err);
+            };
+
             reader.readAsDataURL(file);
         });
 
         // Cancel Crop
-        cancelCropBtn.addEventListener('click', () => {
-            cropModal.classList.remove('active');
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-            ocrInput.value = '';
-        });
-
-        // Confirm Crop & Scan
-        confirmCropBtn.addEventListener('click', async () => {
-            if (!cropper) return;
-
-            // Get cropped canvas
-            const canvas = cropper.getCroppedCanvas();
-
-            // Close modal immediately
-            cropModal.classList.remove('active');
-
-            // Show loading
-            loadingOverlay.classList.add('active');
-
-            try {
-                // Convert canvas to blob/dataURL for Tesseract
-                const croppedDataUrl = canvas.toDataURL('image/png');
-
-                const result = await Tesseract.recognize(
-                    croppedDataUrl,
-                    'eng'
-                );
-
-                const text = result.data.text;
-                console.log('OCR Result:', text);
-
-                // Simple cleanup: remove special chars, keep alphanumeric
-                const cleanedText = text.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-
-                if (cleanedText) {
-                    document.getElementById('searchInput').value = cleanedText;
-                    filterTable();
-                    addToScannedList(cleanedText + " (OCR)"); // Mark as OCR source
-                } else {
-                    alert("No text detected. Please try again.");
-                }
-
-            } catch (error) {
-                console.error(error);
-                alert("Failed to recognize text: " + error.message);
-            } finally {
-                loadingOverlay.classList.remove('active');
+        if (cancelCropBtn) {
+            cancelCropBtn.addEventListener('click', () => {
+                console.log("Cancel Crop Clicked");
+                cropModal.classList.remove('active');
                 if (cropper) {
                     cropper.destroy();
                     cropper = null;
                 }
                 ocrInput.value = '';
-            }
-        });
+            });
+        }
+
+        // Confirm Crop & Scan
+        if (confirmCropBtn) {
+            confirmCropBtn.addEventListener('click', async () => {
+                console.log("Confirm Crop Clicked");
+                if (!cropper) return;
+
+                // Get cropped canvas
+                const canvas = cropper.getCroppedCanvas();
+
+                // Close modal immediately
+                cropModal.classList.remove('active');
+
+                // Show loading
+                loadingOverlay.classList.add('active');
+
+                try {
+                    // Convert canvas to blob/dataURL for Tesseract
+                    const croppedDataUrl = canvas.toDataURL('image/png');
+
+                    const result = await Tesseract.recognize(
+                        croppedDataUrl,
+                        'eng'
+                    );
+
+                    const text = result.data.text;
+                    console.log('OCR Result:', text);
+
+                    // Simple cleanup: remove special chars, keep alphanumeric
+                    const cleanedText = text.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+
+                    if (cleanedText) {
+                        document.getElementById('searchInput').value = cleanedText;
+                        filterTable();
+                        addToScannedList(cleanedText + " (OCR)"); // Mark as OCR source
+                    } else {
+                        alert("No text detected. Please try again.");
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Failed to recognize text: " + error.message);
+                } finally {
+                    loadingOverlay.classList.remove('active');
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                    ocrInput.value = '';
+                }
+            });
+        }
     }
 });
 
