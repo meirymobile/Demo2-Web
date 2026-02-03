@@ -112,9 +112,29 @@ function filterTable() {
         return matchesId && matchesStatus;
     });
 
+    // Show/Hide Clear Button
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (search.length > 0) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+
     document.getElementById('stats').textContent = `Showing ${filtered.length} of ${cargoData.length} entries`;
     renderTable(filtered);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing initialization ...
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const searchInput = document.getElementById('searchInput');
+
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        filterTable();
+        searchInput.focus();
+    });
+});
 
 // --- Barcode Scanner Logic ---
 let html5QrCode;
@@ -246,6 +266,9 @@ function renderScannedList() {
                 <button class="options-btn" onclick="openNoteModal(${index})" title="Edit Note">
                     ⋮
                 </button>
+                <button class="delete-btn" onclick="deleteScannedItem(${index})" title="Delete">
+                    🗑️
+                </button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -256,6 +279,13 @@ function onScanFailure(error) {
     // console.warn(`Code scan error = ${error}`);
     // Only log if you want to debug individual frame failures. 
     // Usually too verbose.
+}
+
+function deleteScannedItem(index) {
+    if (confirm('Are you sure you want to delete this item?')) {
+        scannedItems.splice(index, 1);
+        renderScannedList();
+    }
 }
 
 // --- Notes & Sharing Logic ---

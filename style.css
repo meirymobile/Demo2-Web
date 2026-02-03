@@ -83,6 +83,21 @@ header h1 {
     border-radius: 4px;
 }
 
+.delete-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #e74c3c;
+    padding: 0 10px;
+}
+
+.delete-btn:hover {
+    color: #c0392b;
+    background-color: #fadbd8;
+    border-radius: 4px;
+}
+
 .stats-row {
     flex: 1;
     display: flex;
