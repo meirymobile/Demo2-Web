@@ -289,8 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => {
                         const config = {
                             fps: 20,
-                            qrbox: { width: 250, height: 250 },
-                            aspectRatio: 1.0
+                            qrbox: { width: 250, height: 250 }
                         };
                         html5QrCode.start(newCameraId, config, onScanDetected, onScanFailure)
                             .catch(err => console.error("Switch Start Fail", err));
