@@ -194,16 +194,18 @@ const scannerConfig = {
 let availableCameras = [];
 let currentCameraIndex = 0;
 
+function updateCameraLabel() {
+    const labelEl = document.getElementById('cameraName');
+    if (labelEl && availableCameras.length > 0) {
+        labelEl.textContent = availableCameras[currentCameraIndex].label || `Camera ${currentCameraIndex + 1}`;
+    }
+}
+
 function startScanner() {
-    // Standard config logic
+    // Simplified config - removing videoConstraints to ensure deviceId is respected without conflict
     const config = {
-        fps: 15, // Balanced FPS
-        qrbox: { width: 250, height: 250 },
-        videoConstraints: {
-            width: { min: 640, ideal: 1920, max: 3840 },
-            height: { min: 480, ideal: 1080, max: 2160 },
-            focusMode: "continuous"
-        }
+        fps: 15,
+        qrbox: { width: 250, height: 250 }
     };
 
     // If instance exists, just start it. If not, create it.
@@ -214,8 +216,6 @@ function startScanner() {
     Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
             availableCameras = devices;
-            // DEBUG: Show what cameras we found
-            alert(`Debug: Found ${availableCameras.length} cameras: ` + availableCameras.map(c => c.label).join(', '));
 
             // Try to find back camera for initial load if not set
             if (availableCameras.length > 1) {
@@ -228,6 +228,9 @@ function startScanner() {
             } else {
                 currentCameraIndex = 0;
             }
+
+            // Update Label
+            updateCameraLabel();
 
             // Show/Hide Switch Button
             const switchBtn = document.getElementById('switchCameraBtn');
@@ -244,16 +247,17 @@ function startScanner() {
                 onScanFailure
             ).catch(err => {
                 console.error("Error starting scanner", err);
-                document.getElementById("reader").innerText = "Camera failed: " + err;
-                alert("Error starting camera: " + err);
+                // document.getElementById("reader").innerText = "Camera failed: " + err;
+                // alert("Error starting camera: " + err); // Removed alert
                 stopScanner();
             });
         } else {
-            alert("No cameras found.");
+            // alert("No cameras found."); // Removed alert
+            console.warn("No cameras found.");
         }
     }).catch(err => {
         console.error("Error getting cameras", err);
-        alert("Error accessing camera list: " + err);
+        // alert("Error accessing camera list: " + err); // Removed alert
     });
 }
 
@@ -262,14 +266,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (switchCameraBtn) {
         switchCameraBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // DEBUG: Check click
-            alert(`Switch clicked. Available: ${availableCameras.length}. Current Index: ${currentCameraIndex}`);
-
+            // DEBUG: Check click // Removed debug alert
             if (availableCameras.length < 2) return;
 
             // Cycle index
             currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
             const newCameraId = availableCameras[currentCameraIndex].id;
+            updateCameraLabel();
 
             // Restart scanner
             if (html5QrCode && html5QrCode.isScanning) {
@@ -277,12 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Direct restart with ID
                     const config = {
                         fps: 15,
-                        qrbox: { width: 250, height: 250 },
-                        videoConstraints: {
-                            width: { min: 640, ideal: 1920, max: 3840 },
-                            height: { min: 480, ideal: 1080, max: 2160 },
-                            focusMode: "continuous"
-                        }
+                        qrbox: { width: 250, height: 250 }
                     };
                     return html5QrCode.start(newCameraId, config, onScanSuccess, onScanFailure);
                 }).catch(err => console.error("Failed to switch", err));
