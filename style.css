@@ -376,3 +376,48 @@ th {
         width: 100%;
     }
 }
+
+/* Scanner Overlay Styles */
+#scannerOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Let touches pass through to boxes */
+    z-index: 10;
+}
+
+.scan-box {
+    position: absolute;
+    border: 2px solid #2ecc71;
+    /* Green */
+    background-color: rgba(46, 204, 113, 0.2);
+    cursor: pointer;
+    pointer-events: auto;
+    /* Enable clicking on the box */
+    z-index: 20;
+    transition: all 0.1s ease;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.scan-box:hover {
+    background-color: rgba(46, 204, 113, 0.4);
+    border-width: 3px;
+}
+
+.scan-box::after {
+    content: "Tap to Scan";
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2ecc71;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0.9;
+}

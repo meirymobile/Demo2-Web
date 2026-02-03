@@ -142,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Barcode Scanner Logic ---
 let html5QrCode;
+let detectedCodes = new Map(); // Store detected codes: { text: { box, timestamp } }
+let overlayInterval;
 
 document.addEventListener('DOMContentLoaded', () => {
     const scanBtn = document.getElementById('scanBtn');
@@ -204,13 +206,22 @@ function updateCameraLabel() {
 function startScanner() {
     // Simplified config
     const config = {
-        fps: 15,
-        qrbox: { width: 250, height: 250 }
+        fps: 20, // Higher FPS for smoother tracking
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
     };
 
     if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader", scannerConfig);
     }
+
+    // Clear old overlays
+    detectedCodes.clear();
+    const overlay = document.getElementById('scannerOverlay');
+    if (overlay) overlay.innerHTML = '';
+
+    // Start Cleanup Loop
+    overlayInterval = setInterval(cleanupOverlays, 200);
 
     Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
@@ -242,7 +253,7 @@ function startScanner() {
             html5QrCode.start(
                 cameraId,
                 config,
-                onScanSuccess,
+                onScanDetected, // Changed from onScanSuccess to onScanDetected
                 onScanFailure
             ).catch(err => {
                 console.error("Error starting scanner", err);
@@ -277,10 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Small delay to let hardware release
                     setTimeout(() => {
                         const config = {
-                            fps: 15,
-                            qrbox: { width: 250, height: 250 }
+                            fps: 20,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
                         };
-                        html5QrCode.start(newCameraId, config, onScanSuccess, onScanFailure)
+                        html5QrCode.start(newCameraId, config, onScanDetected, onScanFailure)
                             .catch(err => console.error("Switch Start Fail", err));
                     }, 500);
                 }).catch(err => console.error("Switch Stop Fail", err));
@@ -298,20 +310,109 @@ async function stopScanner() {
                 await html5QrCode.stop();
             }
         } catch (error) {
-            console.log("Scanner stop error (ignore if not running):", error);
+            console.log("Scanner stop error:", error);
         }
     }
+    clearInterval(overlayInterval);
     modal.classList.remove('active');
+    const overlay = document.getElementById('scannerOverlay');
+    if (overlay) overlay.innerHTML = '';
 }
 
-let scannedItems = [];
+// New Logic: Track detected codes and draw boxes
+function onScanDetected(decodedText, decodedResult) {
+    // We do NOT stop scanning. We just track the code.
+    const now = Date.now();
+    detectedCodes.set(decodedText, {
+        text: decodedText,
+        result: decodedResult,
+        timestamp: now
+    });
 
-function onScanSuccess(decodedText, decodedResult) {
-    // Handle the scanned code
-    console.log(`Scan result: ${decodedText}`, decodedResult);
+    renderScanBoxes();
+}
 
-    // Stop scanner and close modal
-    stopScanner();
+function cleanupOverlays() {
+    const now = Date.now();
+    // Remove old codes (> 500ms)
+    for (const [key, value] of detectedCodes.entries()) {
+        if (now - value.timestamp > 500) {
+            detectedCodes.delete(key);
+        }
+    }
+    renderScanBoxes();
+}
+
+function renderScanBoxes() {
+    const overlay = document.getElementById('scannerOverlay');
+    if (!overlay) return;
+
+    // We need the video source dimensions to map coordinates
+    // Html5Qrcode video element
+    const videoElement = document.querySelector('#reader video');
+    if (!videoElement) return;
+
+    // Physical dimensions of the video on screen
+    const displayWidth = videoElement.clientWidth;
+    const displayHeight = videoElement.clientHeight;
+
+    // Internal dimensions of the video stream
+    const videoWidth = videoElement.videoWidth;
+    const videoHeight = videoElement.videoHeight;
+
+    if (!videoWidth || !videoHeight) return;
+
+    // Scaling factors
+    const scaleX = displayWidth / videoWidth;
+    const scaleY = displayHeight / videoHeight;
+
+    // Offset if the video is centered/object-fit
+    // Assuming object-fit: contain, we need to handle letterboxing if needed.
+    // However, html5-qrcode usually fills the container or we sized it to be 100%.
+    // For simplicity, assuming direct mapping first. 
+    // If there's letterboxing (black bars), we need offsets.
+    // Let's rely on standard mapping first.
+
+    // Clear only if needed? Better to diff, but re-render is easier for now.
+    // To avoid flickering, we can just update existing or create new.
+
+    // Simple Re-render
+    overlay.innerHTML = '';
+
+    detectedCodes.forEach((data, text) => {
+        if (!data.result.result.box) return; // No box data?
+
+        const box = data.result.result.box; // {x, y, width, height} or similar depending on format?
+        // Html5Qrcode result format: box might be {x, y, width, height} or points.
+        // Usually it's `box` property for bounding box.
+
+        // Coordinates are usually relative to the video stream size.
+
+        const x = box.x * scaleX;
+        const y = box.y * scaleY;
+        const w = box.width * scaleX;
+        const h = box.height * scaleY;
+
+        const el = document.createElement('div');
+        el.className = 'scan-box';
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+
+        // Add click listener
+        el.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent modal close or other clicks
+            processScanResult(text);
+        });
+
+        overlay.appendChild(el);
+    });
+}
+
+function processScanResult(decodedText) {
+    // This is the actual "Success" action
+    console.log(`User selected: ${decodedText}`);
 
     // Update search field
     const searchInput = document.getElementById('searchInput');
@@ -322,7 +423,13 @@ function onScanSuccess(decodedText, decodedResult) {
 
     // Add to scanned list
     addToScannedList(decodedText);
+
+    // Beep?
+    // Stop scanner and close modal
+    stopScanner();
 }
+
+let scannedItems = [];
 
 function addToScannedList(barcode) {
     // Find item in cargoData
