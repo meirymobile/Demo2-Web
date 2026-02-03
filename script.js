@@ -194,24 +194,10 @@ const scannerConfig = {
 let availableCameras = [];
 let currentCameraIndex = 0;
 
-function logToScreen(msg) {
-    console.log(msg);
-    const logEl = document.getElementById('debugLog');
-    if (logEl) {
-        const time = new Date().toLocaleTimeString().split(' ')[0];
-        logEl.innerHTML += `<div>[${time}] ${msg}</div>`;
-        logEl.scrollTop = logEl.scrollHeight;
-    }
-}
-
 function updateCameraLabel() {
     const labelEl = document.getElementById('cameraName');
-    if (availableCameras.length > 0) {
-        const name = availableCameras[currentCameraIndex].label || `Camera ${currentCameraIndex + 1}`;
-        if (labelEl) labelEl.textContent = name;
-        logToScreen(`UI: Label set to ${name}`);
-    } else {
-        logToScreen("UI: No cameras to label");
+    if (labelEl && availableCameras.length > 0) {
+        labelEl.textContent = availableCameras[currentCameraIndex].label || `Camera ${currentCameraIndex + 1}`;
     }
 }
 
@@ -226,27 +212,20 @@ function startScanner() {
         html5QrCode = new Html5Qrcode("reader", scannerConfig);
     }
 
-    logToScreen("Init: Getting cameras...");
-
     Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
             availableCameras = devices;
-            logToScreen(`Init: Found ${devices.length} cameras.`);
-            devices.forEach((d, i) => logToScreen(`-- [${i}] ${d.label} (${d.id.substring(0, 6)}...)`));
 
             // Try to find back camera for initial load if not set
             if (availableCameras.length > 1) {
                 const backCamIndex = availableCameras.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment'));
                 if (backCamIndex !== -1) {
                     currentCameraIndex = backCamIndex;
-                    logToScreen(`Init: Auto-selected Back Camera at index ${backCamIndex}`);
                 } else {
                     currentCameraIndex = availableCameras.length - 1;
-                    logToScreen(`Init: Defaulting to last camera index ${currentCameraIndex}`);
                 }
             } else {
                 currentCameraIndex = 0;
-                logToScreen("Init: Only 1 camera found.");
             }
 
             // Update Label
@@ -259,28 +238,23 @@ function startScanner() {
             }
 
             const cameraId = availableCameras[currentCameraIndex].id;
-            logToScreen(`Starting camera ID: ${cameraId.substring(0, 15)}...`);
 
             html5QrCode.start(
                 cameraId,
                 config,
                 onScanSuccess,
                 onScanFailure
-            ).then(() => {
-                logToScreen("Camera started successfully.");
-            }).catch(err => {
+            ).catch(err => {
                 console.error("Error starting scanner", err);
-                logToScreen(`FATAL: Start failed: ${err}`);
                 alert("Error starting camera: " + err);
                 stopScanner();
             });
         } else {
-            logToScreen("FATAL: No cameras found (empty list).");
+            console.warn("No cameras found.");
             alert("No cameras found.");
         }
     }).catch(err => {
         console.error("Error getting cameras", err);
-        logToScreen(`FATAL: GetCameras failed: ${err}`);
         alert("Error accessing camera list: " + err);
     });
 }
@@ -292,19 +266,14 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (availableCameras.length < 2) return;
 
-            logToScreen("Switching...");
-
             // Cycle index
             currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
             const newCameraId = availableCameras[currentCameraIndex].id;
             updateCameraLabel();
 
-            logToScreen(`Switch: New Index ${currentCameraIndex}, ID: ${newCameraId.substring(0, 10)}...`);
-
             // Restart scanner
             if (html5QrCode && html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
-                    logToScreen("Stop success. Starting new...");
                     // Small delay to let hardware release
                     setTimeout(() => {
                         const config = {
@@ -312,10 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             qrbox: { width: 250, height: 250 }
                         };
                         html5QrCode.start(newCameraId, config, onScanSuccess, onScanFailure)
-                            .then(() => logToScreen("Switch Start Success"))
-                            .catch(err => logToScreen(`Switch Start Fail: ${err}`));
+                            .catch(err => console.error("Switch Start Fail", err));
                     }, 500);
-                }).catch(err => logToScreen(`Switch Stop Fail: ${err}`));
+                }).catch(err => console.error("Switch Stop Fail", err));
             }
         });
     }
@@ -334,10 +302,6 @@ async function stopScanner() {
         }
     }
     modal.classList.remove('active');
-
-    // Clear log
-    const logEl = document.getElementById('debugLog');
-    if (logEl) logEl.innerHTML = '';
 }
 
 let scannedItems = [];
@@ -345,7 +309,6 @@ let scannedItems = [];
 function onScanSuccess(decodedText, decodedResult) {
     // Handle the scanned code
     console.log(`Scan result: ${decodedText}`, decodedResult);
-    logToScreen(`Scan Success: ${decodedText}`);
 
     // Stop scanner and close modal
     stopScanner();
