@@ -167,6 +167,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Shared Scanner Config
+const scannerConfig = {
+    formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODABAR,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+        Html5QrcodeSupportedFormats.PDF_417,
+        Html5QrcodeSupportedFormats.AZTEC,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.MAXICODE
+    ],
+    verbose: false,
+    experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+    }
+};
+
 function startScanner() {
     // Standard config logic
     const config = {
@@ -176,29 +200,7 @@ function startScanner() {
 
     // If instance exists, just start it. If not, create it.
     if (!html5QrCode) {
-        // Explicitly include common formats to ensure Code 128 (like the example) and others are detected reliably
-        html5QrCode = new Html5Qrcode("reader", {
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODABAR,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.DATA_MATRIX,
-                Html5QrcodeSupportedFormats.PDF_417,
-                Html5QrcodeSupportedFormats.AZTEC,
-                Html5QrcodeSupportedFormats.CODE_93,
-                Html5QrcodeSupportedFormats.MAXICODE
-            ],
-            verbose: false,
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
-        });
+        html5QrCode = new Html5Qrcode("reader", scannerConfig);
     }
 
     const startConfig = {
@@ -484,8 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         try {
                             // Initialize if not exists (Camera might not have been started)
                             if (!html5QrCode) {
-                                html5QrCode = new Html5Qrcode("reader");
-                                // We don't need config for file scan, but it's good to have reference.
+                                html5QrCode = new Html5Qrcode("reader", scannerConfig);
                             }
 
                             const scanResult = await html5QrCode.scanFileV2(file, true);
