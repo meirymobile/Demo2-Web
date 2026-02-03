@@ -310,6 +310,30 @@ document.addEventListener('DOMContentLoaded', () => {
             noteModal.classList.remove('active');
         }
     });
+
+    // Toggle Main List
+    const toggleListBtn = document.getElementById('toggleListBtn');
+    const tableContainer = document.querySelector('.table-container tbody').parentElement.parentElement; // Getting .table-container
+    // actually, let's target the table body or the container itself.
+    // The user said "collapse the cargo list".
+    // Let's toggle the table body visibility or the whole container depending on UX.
+    // Let's toggle the table body for smoother feel or just the container content.
+    // Let's do the container to save space.
+
+    toggleListBtn.addEventListener('click', () => {
+        const tableBody = document.getElementById('tableBody');
+        const icon = document.getElementById('toggleIcon');
+
+        if (tableBody.style.display === 'none') {
+            tableBody.style.display = '';
+            // Change icon to Up (Collapse)
+            icon.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
+        } else {
+            tableBody.style.display = 'none';
+            // Change icon to Down (Expand)
+            icon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+        }
+    });
 });
 
 function generateCSV() {
