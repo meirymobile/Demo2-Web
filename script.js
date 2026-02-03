@@ -547,21 +547,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     // converting canvas to blob
                     canvas.toBlob(async (blob) => {
                         const file = new File([blob], "temp.png", { type: "image/png" });
+                        console.log("Scanning file:", file.size, file.type);
+
                         try {
                             // Initialize if not exists (Camera might not have been started)
                             if (!html5QrCode) {
                                 html5QrCode = new Html5Qrcode("reader", scannerConfig);
                             }
 
-                            const scanResult = await html5QrCode.scanFileV2(file, true);
+                            // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues if modal is hidden
+                            const scanResult = await html5QrCode.scanFileV2(file, false);
                             if (scanResult) {
                                 onScanSuccess(scanResult.decodedText, scanResult);
                             }
                         } catch (err) {
-                            console.error(err);
-                            alert("No barcode found in selected area. Try adjusting the crop.");
+                            console.error("File scan error:", err);
+                            // Show specific error to user to help debug
+                            alert(`Scan failed: ${err}. Try cropping tighter or clearer.`);
                         }
-                    });
+                    }, 'image/png'); // Force PNG format for blob consistency
                 }
             } catch (error) {
                 console.error(error);
