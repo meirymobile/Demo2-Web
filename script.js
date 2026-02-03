@@ -176,9 +176,21 @@ function startScanner() {
 
     // If instance exists, just start it. If not, create it.
     if (!html5QrCode) {
-        // Initialize without specific formats to allow the library to auto-detect all types
-        // This is often more robust than a hardcoded list
+        // Explicitly include common formats to ensure Code 128 (like the example) and others are detected reliably
         html5QrCode = new Html5Qrcode("reader", {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODABAR,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.DATA_MATRIX,
+                Html5QrcodeSupportedFormats.PDF_417
+            ],
             verbose: false
         });
     }
