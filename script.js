@@ -379,11 +379,8 @@ function renderScanBoxes() {
     overlay.innerHTML = '';
 
     detectedCodes.forEach((data, text) => {
-        if (!data.result.result.box) return; // No box data?
-
-        const box = data.result.result.box; // {x, y, width, height} or similar depending on format?
-        // Html5Qrcode result format: box might be {x, y, width, height} or points.
-        // Usually it's `box` property for bounding box.
+        const box = data.result.result.box || data.result.result.boundingBox;
+        if (!box) return;
 
         // Coordinates are usually relative to the video stream size.
 
@@ -536,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // actually, let's target the table body or the container itself.
     // The user said "collapse the cargo list".
     // Let's toggle the table body visibility or the whole container depending on UX.
-    // Let's toggle the table body for smoother feel or just the container content.
     // Let's do the container to save space.
 
     toggleListBtn.addEventListener('click', () => {
@@ -688,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // scanFileV2(file, showImage) - set showImage to false to avoid DOM issues
                             const scanResult = await html5QrCode.scanFileV2(file, false);
                             if (scanResult) {
-                                onScanSuccess(scanResult.decodedText, scanResult);
+                                processScanResult(scanResult.decodedText); // FIXED: Call processScanResult instead of onScanSuccess
                             }
                         } catch (err) {
                             console.error("File scan error:", err);
