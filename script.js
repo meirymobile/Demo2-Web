@@ -189,18 +189,29 @@ function startScanner() {
                 Html5QrcodeSupportedFormats.CODABAR,
                 Html5QrcodeSupportedFormats.ITF,
                 Html5QrcodeSupportedFormats.DATA_MATRIX,
-                Html5QrcodeSupportedFormats.PDF_417
+                Html5QrcodeSupportedFormats.PDF_417,
+                Html5QrcodeSupportedFormats.AZTEC,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.MAXICODE
             ],
-            verbose: false
+            verbose: false,
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            }
         });
     }
 
     const startConfig = {
-        facingMode: "environment"
+        facingMode: "environment",
+        videoConstraints: {
+            width: { min: 640, ideal: 1920, max: 3840 },
+            height: { min: 480, ideal: 1080, max: 2160 },
+            focusMode: "continuous"
+        }
     };
 
     html5QrCode.start(
-        startConfig,
+        startConfig, // Changed to pass the constraints properly
         config,
         onScanSuccess,
         onScanFailure
