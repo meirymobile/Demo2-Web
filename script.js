@@ -330,25 +330,76 @@ document.addEventListener('DOMContentLoaded', () => {
     const ocrInput = document.getElementById('ocrInput');
     const loadingOverlay = document.getElementById('loadingOverlay');
 
+    // Crop Elements
+    const cropModal = document.getElementById('cropModal');
+    const imageToCrop = document.getElementById('imageToCrop');
+    const confirmCropBtn = document.getElementById('confirmCropBtn');
+    const cancelCropBtn = document.getElementById('cancelCropBtn');
+    let cropper = null;
+
     if (ocrBtn && ocrInput) {
         ocrBtn.addEventListener('click', () => {
+            // Reset value to ensure change event fires even if same file selected
+            ocrInput.value = '';
             ocrInput.click();
         });
 
-        ocrInput.addEventListener('change', async (e) => {
+        ocrInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            // 1. Read file to display in cropper
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                imageToCrop.src = event.target.result;
+                cropModal.classList.add('active');
+
+                // Initialize Cropper
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(imageToCrop, {
+                    viewMode: 1,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: true,
+                    scalable: true,
+                    autoCropArea: 0.8, // Default 80% selection
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Cancel Crop
+        cancelCropBtn.addEventListener('click', () => {
+            cropModal.classList.remove('active');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            ocrInput.value = '';
+        });
+
+        // Confirm Crop & Scan
+        confirmCropBtn.addEventListener('click', async () => {
+            if (!cropper) return;
+
+            // Get cropped canvas
+            const canvas = cropper.getCroppedCanvas();
+
+            // Close modal immediately
+            cropModal.classList.remove('active');
 
             // Show loading
             loadingOverlay.classList.add('active');
 
             try {
+                // Convert canvas to blob/dataURL for Tesseract
+                const croppedDataUrl = canvas.toDataURL('image/png');
+
                 const result = await Tesseract.recognize(
-                    file,
-                    'eng', // Language
-                    {
-                        // logger: m => console.log(m) // Optional logging
-                    }
+                    croppedDataUrl,
+                    'eng'
                 );
 
                 const text = result.data.text;
@@ -370,7 +421,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Failed to recognize text: " + error.message);
             } finally {
                 loadingOverlay.classList.remove('active');
-                ocrInput.value = ''; // Reset input
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                ocrInput.value = '';
             }
         });
     }
