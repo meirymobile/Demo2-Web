@@ -191,12 +191,15 @@ const scannerConfig = {
     }
 };
 
+let currentFacingMode = "environment"; // Default to rear camera
+
 function startScanner() {
     // Standard config logic
     const config = {
         fps: 15, // Balanced FPS
         qrbox: { width: 250, height: 250 }, // Constrain scanning to a box. Fixes "frame too big" issues.
         videoConstraints: {
+            facingMode: currentFacingMode, // Use dynamic mode
             width: { min: 640, ideal: 1920, max: 3840 },
             height: { min: 480, ideal: 1080, max: 2160 },
             focusMode: "continuous"
@@ -209,7 +212,7 @@ function startScanner() {
     }
 
     const startConfig = {
-        facingMode: "environment"
+        facingMode: currentFacingMode
     };
 
     html5QrCode.start(
@@ -224,6 +227,25 @@ function startScanner() {
         stopScanner();
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    if (switchCameraBtn) {
+        switchCameraBtn.addEventListener('click', () => {
+            // Toggle mode
+            currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+
+            // Restart scanner
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    startScanner();
+                }).catch(err => console.error("Failed to stop for switch", err));
+            } else {
+                startScanner();
+            }
+        });
+    }
+});
 
 async function stopScanner() {
     const modal = document.getElementById('scannerModal');

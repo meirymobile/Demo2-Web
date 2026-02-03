@@ -129,7 +129,17 @@
     <div id="scannerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <h2>Scan Barcode</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h2 style="margin: 0;">Scan Barcode</h2>
+                <button id="switchCameraBtn" class="icon-btn" title="Switch Camera">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 10c0-6-8-6-8-6s-8 0-8 6h16z"></path>
+                        <path d="M4 14c0 6 8 6 8 6s8 0 8-6H4z"></path>
+                        <path d="M12 12v.01"></path>
+                    </svg>
+                </button>
+            </div>
             <div id="reader"></div>
             <p class="modal-hint">Point camera at a barcode</p>
         </div>
