@@ -144,46 +144,56 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function startScanner() {
-    // Config optimized for 1D barcodes
-    // Removing aspectRatio to avoid distortion
+    // Check if Html5Qrcode is defined
+    if (typeof Html5Qrcode === "undefined") {
+        alert("Scanner library not loaded. Please check internet connection or reload.");
+        return;
+    }
+
     const config = {
-        fps: 20,
-        qrbox: { width: 300, height: 200 }
+        fps: 10, // Lower FPS might be more stable
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
     };
 
     // If instance exists, just start it. If not, create it.
     if (!html5QrCode) {
-        // Explicitly request 1D barcode formats + QR
-        html5QrCode = new Html5Qrcode("reader", {
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.CODE_93,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODABAR,
-                Html5QrcodeSupportedFormats.PDF_417,
-                Html5QrcodeSupportedFormats.DATA_MATRIX,
-                Html5QrcodeSupportedFormats.AZTEC,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.RSS_14,
-                Html5QrcodeSupportedFormats.RSS_EXPANDED
-            ],
-            verbose: false
-        });
+        // Use default config to support all standard formats initially to rule out config errors
+        // or enable relevant experimental features
+        try {
+            html5QrCode = new Html5Qrcode("reader", {
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                },
+                verbose: false
+            });
+        } catch (e) {
+            console.error("Error creating scanner instance:", e);
+            alert("Error initializing scanner: " + e);
+            return;
+        }
     }
 
+    const startConfig = { facingMode: "environment" };
+
+    // Explicitly fallback to older constraints if needed or just use standard
+    // Some devices struggle with resolution, so let's let the library decide defaults first
+
     html5QrCode.start(
-        { facingMode: "environment" },
+        startConfig,
         config,
         onScanSuccess,
         onScanFailure
     ).catch(err => {
         console.error("Error starting scanner", err);
-        alert("Error starting camera: " + err);
+        // Clean up text if it fails
+        document.getElementById("reader").innerText = "Camera failed: " + err;
+        // Try to restart or handle permission issues
+        if (err.name === 'NotAllowedError') {
+            alert("Camera access was denied. Please allow camera access.");
+        } else {
+            alert("Error starting camera: " + err);
+        }
         stopScanner();
     });
 }
@@ -266,6 +276,8 @@ function renderScannedList() {
 
 function onScanFailure(error) {
     // console.warn(`Code scan error = ${error}`);
+    // Only log if you want to debug individual frame failures. 
+    // Usually too verbose.
 }
 
 // --- Notes & Sharing Logic ---
