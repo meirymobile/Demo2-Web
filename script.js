@@ -477,29 +477,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (currentScanMode === 'barcode') {
                     // ... Barcode Logic ...
-                    // Create a temporary instance just for file scanning
-                    const html5QrCodeFile = new Html5Qrcode("reader"); // Reusing the same ID might be tricky if camera is on.
-                    // Actually, 'reader' div is used for camera. 
-                    // Html5Qrcode.scanFileV2 doesn't technically need a DOM element if we use the API correctly, 
-                    // BUT the library is built around the element.
-                    // SAFE TRICK: Pass the file/blob to the static/instance method.
 
                     // converting canvas to blob
                     canvas.toBlob(async (blob) => {
                         const file = new File([blob], "temp.png", { type: "image/png" });
                         try {
-                            // Use the existing instance if possible or a new one?
-                            // If camera is running, we shouldn't touch 'reader'.
-                            // Html5Qrcode has a static method? No, instance method scanFile.
-                            // Let's create a headless instance? No, constructor needs element.
-                            // Let's use a hidden div?
+                            // Initialize if not exists (Camera might not have been started)
+                            if (!html5QrCode) {
+                                html5QrCode = new Html5Qrcode("reader");
+                                // We don't need config for file scan, but it's good to have reference.
+                            }
 
-                            // Better: Use the existing 'html5QrCode' instance if it's initialized?
-                            // If camera is running, we might need to stop it?
-                            // No, let's try creating a temporary div for file scanning if needed, 
-                            // OR just use the library's ability.
-
-                            // Actually, simpler:
                             const scanResult = await html5QrCode.scanFileV2(file, true);
                             if (scanResult) {
                                 onScanSuccess(scanResult.decodedText, scanResult);
