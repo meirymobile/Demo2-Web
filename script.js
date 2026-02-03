@@ -191,15 +191,15 @@ const scannerConfig = {
     }
 };
 
-let currentFacingMode = "environment"; // Default to rear camera
+let availableCameras = [];
+let currentCameraIndex = 0;
 
 function startScanner() {
     // Standard config logic
     const config = {
         fps: 15, // Balanced FPS
-        qrbox: { width: 250, height: 250 }, // Constrain scanning to a box. Fixes "frame too big" issues.
+        qrbox: { width: 250, height: 250 },
         videoConstraints: {
-            facingMode: currentFacingMode, // Use dynamic mode
             width: { min: 640, ideal: 1920, max: 3840 },
             height: { min: 480, ideal: 1080, max: 2160 },
             focusMode: "continuous"
@@ -211,37 +211,76 @@ function startScanner() {
         html5QrCode = new Html5Qrcode("reader", scannerConfig);
     }
 
-    const startConfig = {
-        facingMode: currentFacingMode
-    };
+    Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+            availableCameras = devices;
 
-    html5QrCode.start(
-        startConfig, // Changed to pass the constraints properly
-        config,
-        onScanSuccess,
-        onScanFailure
-    ).catch(err => {
-        console.error("Error starting scanner", err);
-        document.getElementById("reader").innerText = "Camera failed: " + err;
-        alert("Error starting camera: " + err);
-        stopScanner();
+            // Try to find back camera for initial load if not set
+            if (availableCameras.length > 1) {
+                const backCamIndex = availableCameras.findIndex(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment'));
+                if (backCamIndex !== -1) {
+                    currentCameraIndex = backCamIndex;
+                } else {
+                    currentCameraIndex = availableCameras.length - 1;
+                }
+            } else {
+                currentCameraIndex = 0;
+            }
+
+            // Show/Hide Switch Button
+            const switchBtn = document.getElementById('switchCameraBtn');
+            if (switchBtn) {
+                switchBtn.style.display = availableCameras.length > 1 ? 'block' : 'none';
+            }
+
+            const cameraId = availableCameras[currentCameraIndex].id;
+
+            html5QrCode.start(
+                cameraId,
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Error starting scanner", err);
+                document.getElementById("reader").innerText = "Camera failed: " + err;
+                alert("Error starting camera: " + err);
+                stopScanner();
+            });
+        } else {
+            alert("No cameras found.");
+        }
+    }).catch(err => {
+        console.error("Error getting cameras", err);
+        alert("Error accessing camera list: " + err);
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const switchCameraBtn = document.getElementById('switchCameraBtn');
     if (switchCameraBtn) {
-        switchCameraBtn.addEventListener('click', () => {
-            // Toggle mode
-            currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+        switchCameraBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (availableCameras.length < 2) return;
+
+            // Cycle index
+            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+            const newCameraId = availableCameras[currentCameraIndex].id;
 
             // Restart scanner
             if (html5QrCode && html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
-                    startScanner();
-                }).catch(err => console.error("Failed to stop for switch", err));
-            } else {
-                startScanner();
+                    // Direct restart with ID
+                    const config = {
+                        fps: 15,
+                        qrbox: { width: 250, height: 250 },
+                        videoConstraints: {
+                            width: { min: 640, ideal: 1920, max: 3840 },
+                            height: { min: 480, ideal: 1080, max: 2160 },
+                            focusMode: "continuous"
+                        }
+                    };
+                    return html5QrCode.start(newCameraId, config, onScanSuccess, onScanFailure);
+                }).catch(err => console.error("Failed to switch", err));
             }
         });
     }
