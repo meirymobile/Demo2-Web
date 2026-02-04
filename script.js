@@ -369,7 +369,8 @@ const App = {
                     // Alert: Tesseract starting
                     // alert("Debug: Starting Tesseract...");
 
-                    const dataUrl = canvas.toDataURL('image/png');
+                    // PREPROCESS IMAGE (Grayscale + High Contrast)
+                    const dataUrl = App.Utils.preprocessCanvas(canvas);
 
                     const result = await Tesseract.recognize(dataUrl, 'eng', {
                         logger: m => {
@@ -438,6 +439,31 @@ const App = {
             } else {
                 el.classList.remove('active');
             }
+        },
+
+        preprocessCanvas: (canvas) => {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Grayscale & Binarization (Thresholding)
+            // This makes text sharp black and background white
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                // Luminance
+                const gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // Simple Threshold (128 is mid-point, adjusted to 100 to catch lighter text)
+                const val = (gray > 100) ? 255 : 0;
+
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return canvas.toDataURL('image/png');
         }
     },
 
