@@ -420,7 +420,7 @@ const App = {
                     } catch (err) {
                         App.Utils.showLoading(false);
                         console.warn(err);
-                        alert("No barcode found in selection.");
+                        alert("No Barcode found.\n\nTo scan TEXT or LABELS, please use the 'T' (Text) button.");
                     }
                 }
             } catch (err) {
