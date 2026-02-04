@@ -289,17 +289,8 @@ const App = {
     Cropper: {
         loadFile: (e, mode) => {
             try {
-                // DEBUG: Alert entry
-                // alert("Debug: File Input Changed"); 
-
                 const file = e.target.files[0];
-                if (!file) {
-                    alert("Debug: No file selected");
-                    return;
-                }
-
-                // DEBUG: File info
-                // alert("Debug: File Name: " + file.name);
+                if (!file) return;
 
                 App.Utils.showLoading(true, "Preparing Image...");
 
@@ -307,45 +298,29 @@ const App = {
                 const reader = new FileReader();
 
                 reader.onload = (evt) => {
-                    // alert("Debug: FileReader loaded image data.");
                     const img = document.getElementById('imageToCrop');
 
                     img.onload = () => {
                         App.Utils.showLoading(false);
-                        // alert("Debug: Image Loaded. Opening Modal.");
+                        document.getElementById('cropModal').classList.add('active');
 
-                        try {
-                            document.getElementById('cropModal').classList.add('active');
-
-                            // Destroy old cropper
-                            if (App.state.cropperInstance) {
-                                App.state.cropperInstance.destroy();
-                                App.state.cropperInstance = null;
-                            }
-
-                            // Verify Cropper Library
-                            if (typeof Cropper === 'undefined') {
-                                throw new Error("Cropper.js library not loaded!");
-                            }
-
-                            // Initialize new Cropper
-                            App.state.cropperInstance = new Cropper(img, {
-                                viewMode: 1,
-                                autoCropArea: 0.8,
-                                responsive: true,
-                                ready: function () {
-                                    // alert("Debug: Cropper Ready!");
-                                }
-                            });
-                        } catch (err) {
-                            alert("Critical Error Init Cropper: " + err.message);
-                            console.error(err);
+                        // Destroy old cropper
+                        if (App.state.cropperInstance) {
+                            App.state.cropperInstance.destroy();
+                            App.state.cropperInstance = null;
                         }
+
+                        // Initialize new Cropper
+                        App.state.cropperInstance = new Cropper(img, {
+                            viewMode: 1,
+                            autoCropArea: 0.8,
+                            responsive: true
+                        });
                     };
 
                     img.onerror = (e) => {
                         App.Utils.showLoading(false);
-                        alert("Debug Error: Image failed to render. " + e);
+                        alert("Error: Image failed to render.");
                     };
 
                     img.src = evt.target.result;
@@ -353,13 +328,13 @@ const App = {
 
                 reader.onerror = () => {
                     App.Utils.showLoading(false);
-                    alert("Debug Error: FileReader failed");
+                    alert("Error: FileReader failed");
                 }
 
                 reader.readAsDataURL(file);
                 e.target.value = ''; // Reset input
             } catch (err) {
-                alert("Global Handler Error: " + err.message);
+                alert("Error: " + err.message);
             }
         },
 
