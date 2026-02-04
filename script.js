@@ -349,8 +349,13 @@ const App = {
         process: async () => {
             if (!App.state.cropperInstance) return;
 
-            // Get Metadata
-            const canvas = App.state.cropperInstance.getCroppedCanvas();
+            // Verify Canvas
+            const canvas = App.state.cropperInstance.getCroppedCanvas({
+                width: 800, // Limit width for performance/quality balance
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+
             if (!canvas) {
                 alert("Could not crop image. Try again.");
                 return;
@@ -361,16 +366,35 @@ const App = {
 
             try {
                 if (App.state.scanMode === 'ocr') {
-                    // Tesseract
-                    const result = await Tesseract.recognize(canvas.toDataURL(), 'eng');
+                    // Alert: Tesseract starting
+                    // alert("Debug: Starting Tesseract...");
+
+                    const dataUrl = canvas.toDataURL('image/png');
+
+                    const result = await Tesseract.recognize(dataUrl, 'eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                App.Utils.showLoading(true, `Recognizing... ${Math.round(m.progress * 100)}%`);
+                            }
+                        }
+                    });
+
+                    const rawText = result.data.text;
+                    // ALERT RAW OUTPUT (Debugging)
+                    if (!rawText || rawText.trim().length === 0) {
+                        alert("Debug: OCR finished but found NO text at all.");
+                    } else {
+                        // alert("Debug Raw OCR: " + rawText.substring(0, 50)); // Show first 50 chars
+                    }
+
                     // Allow letters, numbers, dashes, and spaces.
-                    const text = result.data.text.replace(/[^a-zA-Z0-9\-\s]/g, ' ').trim();
+                    const text = rawText.replace(/[^a-zA-Z0-9\-\s]/g, ' ').trim();
                     App.Utils.showLoading(false);
 
-                    if (text.length > 1) { // Relaxed length check
-                        App.UI.processScanResult(text + " (OCR)"); // Pass to central handler
+                    if (text.length > 0) { // Very relaxed check
+                        App.UI.processScanResult(text + " (OCR)");
                     } else {
-                        alert("No legible text found. Try cropping cleaner text.");
+                        alert("No legible text found. \nRaw was: " + rawText.substring(0, 20) + "...");
                     }
 
                 } else {
