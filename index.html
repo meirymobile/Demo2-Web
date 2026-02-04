@@ -65,13 +65,6 @@
                     <option value="Rejected">Rejected</option>
                     <option value="Saban">Saban</option>
                 </select>
-                <button id="toggleListBtn" class="icon-btn" title="Toggle List Visibility">
-                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" style="transform: rotate(180deg);">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg>
-                </button>
             </div>
 
             <!-- Bottom Row: Scanning Buttons -->
@@ -103,6 +96,18 @@
                         <path d="M4 7V4h16v3M9 20h6M12 4v16" />
                     </svg>
                     <span style="margin-left: 8px;">OCR</span>
+                </button>
+            </div>
+
+            <!-- Row 3: Toggle Arrow -->
+            <div style="display: flex; justify-content: center; margin-top: 5px;">
+                <button id="toggleListBtn" class="icon-btn" title="Toggle List Visibility"
+                    style="width: 100%; justify-content: center; background-color: #e9ecef; color: #333;">
+                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="transform: rotate(180deg);">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
                 </button>
             </div>
 
@@ -218,9 +223,9 @@
         </div>
     </div>
 
-    <script src="script.js?v=20"></script>
-    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.10
-        (UI: Scan Buttons Row) - BLUE TEXT = UPDATED</div>
+    <script src="script.js?v=21"></script>
+    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.11
+        (UI: Toggle Below Buttons) - BLUE TEXT = UPDATED</div>
 </body>
 
 </html>
