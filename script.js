@@ -229,7 +229,11 @@ const App = {
 
             App.state.scannerInstance.start(
                 camId,
-                { fps: 10, qrbox: 250 },
+                {
+                    fps: 10,
+                    qrbox: 250,
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+                },
                 (decodedText) => {
                     App.Scanner.handleResult(decodedText);
                 },
@@ -287,29 +291,38 @@ const App = {
             const file = e.target.files[0];
             if (!file) return;
 
+            App.Utils.showLoading(true, "Preparing Image...");
+
             App.state.scanMode = mode;
             const reader = new FileReader();
 
             reader.onload = (evt) => {
-                document.getElementById('cropModal').classList.add('active');
                 const img = document.getElementById('imageToCrop');
-                img.src = evt.target.result;
 
-                // Destroy old cropper
-                if (App.state.cropperInstance) {
-                    App.state.cropperInstance.destroy();
-                    App.state.cropperInstance = null;
-                }
+                img.onload = () => {
+                    App.Utils.showLoading(false);
+                    document.getElementById('cropModal').classList.add('active');
 
-                // Initialize new Cropper
-                // Slight delay to ensure modal is rendered
-                setTimeout(() => {
+                    // Destroy old cropper
+                    if (App.state.cropperInstance) {
+                        App.state.cropperInstance.destroy();
+                        App.state.cropperInstance = null;
+                    }
+
+                    // Initialize new Cropper
                     App.state.cropperInstance = new Cropper(img, {
                         viewMode: 1,
                         autoCropArea: 0.8,
                         responsive: true
                     });
-                }, 100);
+                };
+
+                img.onerror = () => {
+                    App.Utils.showLoading(false);
+                    alert("Failed to render image.");
+                };
+
+                img.src = evt.target.result;
             };
 
             reader.readAsDataURL(file);
@@ -341,13 +354,14 @@ const App = {
                 if (App.state.scanMode === 'ocr') {
                     // Tesseract
                     const result = await Tesseract.recognize(canvas.toDataURL(), 'eng');
-                    const text = result.data.text.replace(/[^a-zA-Z0-9]/g, ' ').trim();
+                    // Allow letters, numbers, dashes, and spaces.
+                    const text = result.data.text.replace(/[^a-zA-Z0-9\-\s]/g, ' ').trim();
                     App.Utils.showLoading(false);
 
-                    if (text.length > 2) {
+                    if (text.length > 1) { // Relaxed length check
                         App.UI.processScanResult(text + " (OCR)"); // Pass to central handler
                     } else {
-                        alert("No legible text found.");
+                        alert("No legible text found. Try cropping cleaner text.");
                     }
 
                 } else {
