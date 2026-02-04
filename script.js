@@ -111,31 +111,7 @@ const App = {
         },
 
         renderChart: () => {
-            const ctx = document.getElementById('statusChart');
-            if (!ctx) return;
-
-            // Destroy existing if stored on the canvas element specifically (Chart.js logic)
-            const existingChart = Chart.getChart(ctx);
-            if (existingChart) existingChart.destroy();
-
-            const data = App.state.cargoData;
-            const counts = [
-                data.filter(i => i.status === 'Approved').length,
-                data.filter(i => i.status === 'Rejected').length,
-                data.filter(i => i.status === 'Saban').length
-            ];
-
-            new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Approved', 'Rejected', 'Saban'],
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: ['#2ecc71', '#e74c3c', '#f1c40f']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            // Chart removed in v3.9
         },
 
         clearSearch: () => {

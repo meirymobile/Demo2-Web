@@ -26,17 +26,8 @@
         </header>
 
         <div class="dashboard-grid">
-            <!-- ... (Keep Chart and Stats as is) ... -->
-            <!-- Chart Section -->
-            <div class="card chart-container">
-                <h2>Overview</h2>
-                <div class="chart-wrapper">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-
             <!-- Stats Cards -->
-            <div class="stats-row">
+            <div class="stats-row" style="width: 100%;">
                 <div class="stat-card approved">
                     <h3>Approved</h3>
                     <span id="count-approved">0</span>
@@ -103,7 +94,8 @@
             <button id="toggleListBtn" class="icon-btn" title="Toggle List Visibility">
                 <!-- Chevron Up/Down Icon (Starts Up meaning visible) -->
                 <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="transform: rotate(180deg);">
                     <polyline points="18 15 12 9 6 15"></polyline>
                 </svg>
             </button>
@@ -119,7 +111,7 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
+                <tbody id="tableBody" style="display: none;">
                     <!-- Rows will be populated by JS -->
                 </tbody>
             </table>
@@ -216,9 +208,9 @@
         </div>
     </div>
 
-    <script src="script.js?v=18"></script>
-    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.8
-        (UX: Button Guidance) - BLUE TEXT = UPDATED</div>
+    <script src="script.js?v=19"></script>
+    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.9
+        (UI Clean: List Collapsed) - BLUE TEXT = UPDATED</div>
 </body>
 
 </html>
