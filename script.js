@@ -369,7 +369,7 @@ const App = {
                     // Alert: Tesseract starting
                     // alert("Debug: Starting Tesseract...");
 
-                    // PREPROCESS IMAGE (Grayscale + High Contrast)
+                    // PREPROCESS IMAGE (Grayscale Only - Safer for dot matrix)
                     const dataUrl = App.Utils.preprocessCanvas(canvas);
 
                     const result = await Tesseract.recognize(dataUrl, 'eng', {
@@ -377,7 +377,9 @@ const App = {
                             if (m.status === 'recognizing text') {
                                 App.Utils.showLoading(true, `Recognizing... ${Math.round(m.progress * 100)}%`);
                             }
-                        }
+                        },
+                        tessedit_pageseg_mode: '6', // PSM 6: Assume a single uniform block of text
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- ' // Lock to uppercase/numbers/dash
                     });
 
                     const rawText = result.data.text;
@@ -446,21 +448,23 @@ const App = {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // Grayscale & Binarization (Thresholding)
-            // This makes text sharp black and background white
+            // Grayscale + Contrast Stretch (No hard binary threshold)
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
                 // Luminance
-                const gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-                // Simple Threshold (128 is mid-point, adjusted to 100 to catch lighter text)
-                const val = (gray > 100) ? 255 : 0;
+                // Increase Contrast slightly
+                gray = (gray - 128) * 1.5 + 128;
+                // Clamp
+                if (gray < 0) gray = 0;
+                if (gray > 255) gray = 255;
 
-                data[i] = val;
-                data[i + 1] = val;
-                data[i + 2] = val;
+                data[i] = gray;
+                data[i + 1] = gray;
+                data[i + 2] = gray;
             }
             ctx.putImageData(imageData, 0, 0);
             return canvas.toDataURL('image/png');
