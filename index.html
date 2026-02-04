@@ -44,61 +44,71 @@
         </div>
 
         <!-- Controls -->
-        <div class="controls">
-            <div class="search-wrapper">
-                <input type="text" id="searchInput" placeholder="Search by ID..." onkeyup="filterTable()">
-                <button id="clearSearchBtn" class="icon-btn" title="Clear Search" style="display: none;">
-                    <!-- X Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+        <!-- Controls -->
+        <div class="controls" style="flex-direction: column; align-items: stretch; gap: 10px;">
+            <!-- Top Row: Search & Filters -->
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <div class="search-wrapper" style="flex: 1; display: flex; gap: 5px;">
+                    <input type="text" id="searchInput" placeholder="Search by ID..." onkeyup="filterTable()"
+                        style="flex: 1;">
+                    <button id="clearSearchBtn" class="icon-btn" title="Clear Search" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <select id="statusFilter" onchange="filterTable()" style="width: auto;">
+                    <option value="All">All Statuses</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Saban">Saban</option>
+                </select>
+                <button id="toggleListBtn" class="icon-btn" title="Toggle List Visibility">
+                    <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="transform: rotate(180deg);">
+                        <polyline points="18 15 12 9 6 15"></polyline>
                     </svg>
                 </button>
-                <button id="scanBtn" class="icon-btn" title="Scan Barcode (Camera)">
-                    <!-- Camera Icon (SVG) -->
+            </div>
+
+            <!-- Bottom Row: Scanning Buttons -->
+            <div style="display: flex; gap: 10px; justify-content: space-between;">
+                <button id="scanBtn" class="icon-btn" title="Scan Barcode (Camera)"
+                    style="flex: 1; justify-content: center; background-color: #007bff;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
                         </path>
                         <circle cx="12" cy="13" r="4"></circle>
                     </svg>
+                    <span style="margin-left: 8px;">Scan</span>
                 </button>
-                <button id="scanImgBtn" class="icon-btn" title="Scan Barcode (Image/File)">
-                    <!-- Image Icon -->
+                <button id="scanImgBtn" class="icon-btn" title="Scan Barcode (Image/File)"
+                    style="flex: 1; justify-content: center; background-color: #17a2b8;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
+                    <span style="margin-left: 8px;">Image</span>
                 </button>
-                <!-- Hidden file input for Barcode Image -->
-                <input type="file" id="scanImgInput" accept="image/*" style="display: none;">
-                <button id="ocrBtn" class="icon-btn" title="Scan Text (OCR)">
-                    <!-- Text Scan Icon -->
+                <button id="ocrBtn" class="icon-btn" title="Scan Text (OCR)"
+                    style="flex: 1; justify-content: center; background-color: #6610f2;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 7V4h16v3M9 20h6M12 4v16" />
                     </svg>
+                    <span style="margin-left: 8px;">OCR</span>
                 </button>
-                <!-- Hidden file input for OCR -->
-                <input type="file" id="ocrInput" capture="environment" accept="image/*" style="display: none;">
             </div>
-            <select id="statusFilter" onchange="filterTable()">
-                <option value="All">All Statuses</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Saban">Saban</option>
-            </select>
-            <button id="toggleListBtn" class="icon-btn" title="Toggle List Visibility">
-                <!-- Chevron Up/Down Icon (Starts Up meaning visible) -->
-                <svg id="toggleIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="transform: rotate(180deg);">
-                    <polyline points="18 15 12 9 6 15"></polyline>
-                </svg>
-            </button>
+
+            <!-- Hidden inputs -->
+            <input type="file" id="scanImgInput" accept="image/*" style="display: none;">
+            <input type="file" id="ocrInput" capture="environment" accept="image/*" style="display: none;">
         </div>
 
         <!-- Table -->
@@ -208,9 +218,9 @@
         </div>
     </div>
 
-    <script src="script.js?v=19"></script>
-    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.9
-        (UI Clean: List Collapsed) - BLUE TEXT = UPDATED</div>
+    <script src="script.js?v=20"></script>
+    <div style="text-align: center; color: blue; font-weight: bold; padding: 20px; font-size: 1.2em; clear: both;">v3.10
+        (UI: Scan Buttons Row) - BLUE TEXT = UPDATED</div>
 </body>
 
 </html>
