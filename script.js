@@ -288,45 +288,79 @@ const App = {
     // --- Crop & Image Logic ---
     Cropper: {
         loadFile: (e, mode) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            try {
+                // DEBUG: Alert entry
+                // alert("Debug: File Input Changed"); 
 
-            App.Utils.showLoading(true, "Preparing Image...");
+                const file = e.target.files[0];
+                if (!file) {
+                    alert("Debug: No file selected");
+                    return;
+                }
 
-            App.state.scanMode = mode;
-            const reader = new FileReader();
+                // DEBUG: File info
+                // alert("Debug: File Name: " + file.name);
 
-            reader.onload = (evt) => {
-                const img = document.getElementById('imageToCrop');
+                App.Utils.showLoading(true, "Preparing Image...");
 
-                img.onload = () => {
-                    App.Utils.showLoading(false);
-                    document.getElementById('cropModal').classList.add('active');
+                App.state.scanMode = mode;
+                const reader = new FileReader();
 
-                    // Destroy old cropper
-                    if (App.state.cropperInstance) {
-                        App.state.cropperInstance.destroy();
-                        App.state.cropperInstance = null;
-                    }
+                reader.onload = (evt) => {
+                    // alert("Debug: FileReader loaded image data.");
+                    const img = document.getElementById('imageToCrop');
 
-                    // Initialize new Cropper
-                    App.state.cropperInstance = new Cropper(img, {
-                        viewMode: 1,
-                        autoCropArea: 0.8,
-                        responsive: true
-                    });
+                    img.onload = () => {
+                        App.Utils.showLoading(false);
+                        // alert("Debug: Image Loaded. Opening Modal.");
+
+                        try {
+                            document.getElementById('cropModal').classList.add('active');
+
+                            // Destroy old cropper
+                            if (App.state.cropperInstance) {
+                                App.state.cropperInstance.destroy();
+                                App.state.cropperInstance = null;
+                            }
+
+                            // Verify Cropper Library
+                            if (typeof Cropper === 'undefined') {
+                                throw new Error("Cropper.js library not loaded!");
+                            }
+
+                            // Initialize new Cropper
+                            App.state.cropperInstance = new Cropper(img, {
+                                viewMode: 1,
+                                autoCropArea: 0.8,
+                                responsive: true,
+                                ready: function () {
+                                    // alert("Debug: Cropper Ready!");
+                                }
+                            });
+                        } catch (err) {
+                            alert("Critical Error Init Cropper: " + err.message);
+                            console.error(err);
+                        }
+                    };
+
+                    img.onerror = (e) => {
+                        App.Utils.showLoading(false);
+                        alert("Debug Error: Image failed to render. " + e);
+                    };
+
+                    img.src = evt.target.result;
                 };
 
-                img.onerror = () => {
+                reader.onerror = () => {
                     App.Utils.showLoading(false);
-                    alert("Failed to render image.");
-                };
+                    alert("Debug Error: FileReader failed");
+                }
 
-                img.src = evt.target.result;
-            };
-
-            reader.readAsDataURL(file);
-            e.target.value = ''; // Reset input
+                reader.readAsDataURL(file);
+                e.target.value = ''; // Reset input
+            } catch (err) {
+                alert("Global Handler Error: " + err.message);
+            }
         },
 
         close: () => {
